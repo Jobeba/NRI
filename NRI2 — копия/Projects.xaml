@@ -1,0 +1,69 @@
+﻿<Window x:Class="NRI.NRI.Projects"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:NRI"
+        xmlns:gif="http://wpfanimatedgif.codeplex.com" 
+        mc:Ignorable="d"
+        Title="Projects" Height="450" Width="800" Cursor="" Loaded="Window_Loaded">
+    <Window.Resources>
+
+    </Window.Resources>
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="187*"/>
+            <ColumnDefinition Width="613*"/>
+        </Grid.ColumnDefinitions>
+        <Label Style="{StaticResource Monocraft_Medium}" Width="614" VerticalAlignment="Top" VerticalContentAlignment="Center" Grid.Row="0" HorizontalContentAlignment="Center" Height="61" HorizontalAlignment="Center" FontSize="25" Foreground="White" Content="Мероприятия" Background="#00677E" Grid.Column="1"/>
+        <StackPanel Width="188" VerticalAlignment="Top" RenderTransformOrigin="0.5,0.5" Margin="0,177,0,0" Height="259" HorizontalAlignment="Center" Background="#483C32">
+            <StackPanel.RenderTransform>
+                <TransformGroup>
+                    <ScaleTransform/>
+                    <SkewTransform AngleX="0.028"/>
+                    <RotateTransform/>
+                    <TranslateTransform X="-0.166"/>
+                </TransformGroup>
+            </StackPanel.RenderTransform>
+            <Button Style="{StaticResource CustomFont}" Margin="0,20,0,0" Content="Сохранить" Width="189" FontSize="16" Foreground="#0A0A0A" Click="Save_Click" Cursor="Hand" BorderBrush="#002800" Background="#00A86B" Height="25" />
+            <Button Style="{StaticResource CustomFont}" Margin="0,20,0,0" Content="Удалить" Width="189" FontSize="16" Foreground="#0A0A0A" Click="Delete_Click" Cursor="Hand" BorderBrush="#002800" Background="#00A86B" Height="25" />
+            <Button Style="{StaticResource CustomFont}" Margin="0,20,0,0" Width="187" FontSize="16"  Foreground="#0A0A0A" Content="Вернуться на главную" Click="MainMenu_Click" Cursor="Hand" BorderBrush="#002800" Background="#00A86B" Height="25"/>
+            <Button Style="{StaticResource CustomFont}" Margin="0,20,0,0" FontSize="16" Foreground="#0A0A0A" Content="Выйти с аккаунта" Click="Exist_click" Cursor="Hand" BorderBrush="#002800" Background="#00A86B"/>
+            <Button Style="{StaticResource CustomFont}" Margin="0,20,0,0" FontSize="16"  Foreground="#0A0A0A" Content="Завершить работу" Click="Showdown_click" Cursor="Hand" BorderBrush="#002800" Background="#00A86B"/>
+        </StackPanel>
+
+        <Label Grid.Row="0" Background="Black" RenderTransformOrigin="0.5,0.5" Height="177" VerticalAlignment="Top" HorizontalAlignment="Center" Width="186" >
+            <Label.RenderTransform>
+                <TransformGroup>
+                    <ScaleTransform/>
+                    <SkewTransform AngleX="0"/>
+                    <RotateTransform/>
+                    <TranslateTransform X="0"/>
+                </TransformGroup>
+            </Label.RenderTransform>
+            <Image gif:ImageBehavior.AnimatedSource="/image/Intellect_dice.gif"
+                gif:ImageBehavior.RepeatBehavior="1"
+                gif:ImageBehavior.AnimateInDesignMode="False"
+                gif:ImageBehavior.AutoStart="True"              
+                Height="168" Width="176"  Stretch="UniformToFill" />
+        </Label>
+        <DataGrid x:Name="eventsDataGrid" AutoGenerateColumns="False" EnableRowVirtualization="True" ItemsSource="{Binding}" RowDetailsVisibilityMode="VisibleWhenSelected" Margin="186,61,0,0" Grid.ColumnSpan="2">
+            <DataGrid.Columns>
+                <DataGridTextColumn x:Name="eventNameColumn" Binding="{Binding EventName}" Header="Event Name" Width="SizeToHeader"/>
+                <DataGridTextColumn x:Name="descriptionColumn" Binding="{Binding Description}" Header="Description" Width="SizeToHeader"/>
+                <DataGridTextColumn x:Name="organizerIDColumn" Binding="{Binding OrganizerID}" Header="Organizer ID" Width="SizeToHeader"/>
+                <DataGridTextColumn x:Name="systemIDColumn" Binding="{Binding SystemID}" Header="System ID" Width="SizeToHeader"/>
+                <DataGridTextColumn x:Name="settingIDColumn" Binding="{Binding SettingID}" Header="Setting ID" Width="SizeToHeader"/>
+                <DataGridTextColumn x:Name="maxParticipantsColumn" Binding="{Binding MaxParticipants}" Header="Max Participants" Width="SizeToHeader"/>
+                <DataGridTemplateColumn x:Name="eventDateColumn" Header="Event Date" Width="SizeToHeader">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <DatePicker SelectedDate="{Binding EventDate, Mode=TwoWay, NotifyOnValidationError=true, ValidatesOnExceptions=true}"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+
+    </Grid>
+</Window>

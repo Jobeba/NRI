@@ -1,0 +1,48 @@
+﻿<Window
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:NRI"
+        xmlns:gif="http://wpfanimatedgif.codeplex.com" x:Class="NRI.Settings"
+        mc:Ignorable="d"
+        Title="Сеттинги" Height="450" Width="800" Loaded="Window_Loaded">
+    <Window.Resources>
+
+    
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="153*"/>
+            <RowDefinition Height="281*"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="93*"/>
+            <ColumnDefinition Width="307*"/>
+        </Grid.ColumnDefinitions>
+        <Label Style="{StaticResource Monocraft_Medium}" Width="612" VerticalAlignment="Bottom" VerticalContentAlignment="Center" Grid.Row="0" HorizontalContentAlignment="Center" Height="61" HorizontalAlignment="Center" FontSize="25" Foreground="White" Content="Сеттинги" Background="#00677E" Grid.Column="1" Margin="0,0,0,92"/>
+        <StackPanel Width="190" VerticalAlignment="Center" RenderTransformOrigin="0.5,0.5" Height="284" HorizontalAlignment="Center" Background="#483C32" Grid.Row="1">
+            <StackPanel.RenderTransform>
+                <TransformGroup>
+                    <ScaleTransform/>
+                    <SkewTransform AngleX="0.028"/>
+                    <RotateTransform/>
+                    <TranslateTransform X="-0.166"/>
+                </TransformGroup>
+            </StackPanel.RenderTransform>
+            <Button Style="{StaticResource CustomFont}" Margin="0,30,0,0" Content="Сохранить" Width="174" FontSize="16" Foreground="#0A0A0A" Click="Save_Click" Cursor="Hand" BorderBrush="#002800" Background="#00A86B" Height="25" />
+            <Button Style="{StaticResource CustomFont}" Margin="0,30,0,0" Content="Удалить" Width="174" FontSize="16" Foreground="#0A0A0A" Click="Delete_Click" Cursor="Hand" BorderBrush="#002800" Background="#00A86B" Height="25" />
+            <Button Style="{StaticResource CustomFont}" Margin="0,30,0,0" Width="177" FontSize="16"  Foreground="#0A0A0A" Content="Вернуться на главную" Click="MainMenu_Click" Cursor="Hand" BorderBrush="#002800" Background="#00A86B" Height="25"/>
+            <Button Style="{StaticResource CustomFont}" Margin="0,30,0,0" FontSize="16" Foreground="#0A0A0A" Content="Выйти с аккаунта" Click="Exist_click" Cursor="Hand" BorderBrush="#002800" Background="#00A86B"/>
+            <Button Style="{StaticResource CustomFont}" Margin="0,30,0,0" FontSize="16"  Foreground="#0A0A0A" Content="Завершить работу" Click="Showdown_click" Cursor="Hand" BorderBrush="#002800" Background="#00A86B"/>
+        </StackPanel>
+
+        <Image gif:ImageBehavior.AnimatedSource="image\Intellect_dice.gif"
+            gif:ImageBehavior.RepeatBehavior="1"
+            gif:ImageBehavior.AnimateInDesignMode="False"
+            gif:ImageBehavior.AutoStart="True"              
+            Stretch="UniformToFill" Height="153" VerticalAlignment="Center" HorizontalAlignment="Left" Width="186" />
+
+    </Grid>
+</Window>

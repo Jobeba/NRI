@@ -1,0 +1,58 @@
+﻿<Window
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" 
+        xmlns:local="clr-namespace:NRI" x:Class="NRI.Events" 
+        Title="Events" Height="450" Width="800" Loaded="Window_Loaded">
+    <Window.Resources>
+        <!-- Стили для ретро-оформления -->
+        <Style TargetType="{x:Type Button}">
+            <Setter Property="Background" Value="#FF8C00"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontFamily" Value="Courier New"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="Padding" Value="10"/>
+            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="BorderBrush" Value="Black"/>
+        </Style>
+        <Style TargetType="{x:Type DataGrid}">
+            <Setter Property="Background" Value="#1E1E1E"/>
+            <Setter Property="Foreground" Value="Black"/>
+            <Setter Property="FontFamily" Value="Courier New"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="BorderBrush" Value="#FF8C00"/>
+        </Style>
+        <local:Kasyanov_NRIDataSet x:Key="kasyanov_NRIDataSet"/>
+        <CollectionViewSource x:Key="eventsViewSource" Source="{Binding Events, Source={StaticResource kasyanov_NRIDataSet}}"/>
+    </Window.Resources>
+    <Grid DataContext="{StaticResource eventsViewSource}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <StackPanel Orientation="Horizontal" Grid.Row="1" HorizontalAlignment="Center">
+            <Button Content="Save" Click="SaveButton_Click" Margin="10"/>
+            <Button Content="Delete" Click="DeleteButton_Click" Margin="10"/>
+            <Button Content="Main Menu" Click="MainMenu_Click" Margin="10"/>
+            <Button Content="Exit" Click="Showdown_click" Margin="10"/>
+        </StackPanel>
+        <DataGrid x:Name="eventsDataGrid" RowDetailsVisibilityMode="VisibleWhenSelected" ItemsSource="{Binding}" EnableRowVirtualization="True" AutoGenerateColumns="False" Margin="0,0,0,5" Grid.RowSpan="2">
+            <DataGrid.Columns>
+                <DataGridTextColumn x:Name="eventIDColumn" Width="SizeToHeader" IsReadOnly="True" Header="Event ID" Binding="{Binding EventID}"/>
+                <DataGridTextColumn x:Name="eventNameColumn" Width="SizeToHeader" Header="Event Name" Binding="{Binding EventName}"/>
+                <DataGridTextColumn x:Name="descriptionColumn" Width="SizeToHeader" Header="Description" Binding="{Binding Description}"/>
+                <DataGridTextColumn x:Name="organizerIDColumn" Width="SizeToHeader" Header="Organizer ID" Binding="{Binding OrganizerID}"/>
+                <DataGridTextColumn x:Name="systemIDColumn" Width="SizeToHeader" Header="System ID" Binding="{Binding SystemID}"/>
+                <DataGridTextColumn x:Name="settingIDColumn" Width="SizeToHeader" Header="Setting ID" Binding="{Binding SettingID}"/>
+                <DataGridTextColumn x:Name="maxParticipantsColumn" Width="SizeToHeader" Header="Max Participants" Binding="{Binding MaxParticipants}"/>
+                <DataGridTemplateColumn x:Name="eventDateColumn" Width="SizeToHeader" Header="Event Date">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <DatePicker SelectedDate="{Binding EventDate, Mode=TwoWay, NotifyOnValidationError=true, ValidatesOnExceptions=true}"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+    </Grid>
+</Window>

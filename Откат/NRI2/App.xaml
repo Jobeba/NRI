@@ -1,0 +1,24 @@
+﻿<Application x:Class="NRI.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:NRI"
+             StartupUri="Registration.xaml">
+    <Application.Resources>
+        <Style x:Key="CustomFont">
+            <Setter Property="TextElement.FontFamily"
+                Value="/fonts/#Pixelizer Bold">
+            </Setter>
+
+        </Style>
+        <Style x:Key="Monocraft_Medium">
+            <Setter Property="TextElement.FontFamily"
+                        Value="/fonts/#Monocraft Medium">
+            </Setter>
+        </Style>
+        <Style x:Key="Dynastium_Regular">
+            <Setter Property="TextElement.FontFamily"
+                Value="/fonts/Dynastium Dotmatrix Regular">
+            </Setter>
+        </Style>
+    </Application.Resources>
+</Application>

@@ -11,9 +11,7 @@ namespace NRI
         public static string Login { get; set; }
         public static int Incorrect { get; set; }
         public static string Sql { get; set; }
-
         public static bool date = false;
-
         public static string role { get; set; }
 
     }

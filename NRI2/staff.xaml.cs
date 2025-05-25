@@ -54,9 +54,7 @@ namespace NRI
 
         private void DiceRoller_click(object sender, RoutedEventArgs e)
         {
-            DiceRoller dice = new DiceRoller();
-            dice.Show();
-            this.Hide();
+
         }
         private void Save_Click(object sender, RoutedEventArgs e)
         {

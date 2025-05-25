@@ -1,64 +1,98 @@
-﻿using System;
+﻿// DatabaseService.cs
+using System;
 using System.Data;
 using System.Data.SqlClient;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 
 namespace NRI.Classes
 {
     public class DatabaseService : IDatabaseService
     {
-        private readonly string _connectionString;
+        private readonly IConfigService _configService;
+        private readonly ILogger<DatabaseService> _logger;
 
-        public DatabaseService(string connectionString)
+        public DatabaseService(IConfigService configService, ILogger<DatabaseService> logger)
         {
-            _connectionString = connectionString ?? throw new ArgumentNullException(nameof(connectionString));
+            _configService = configService ?? throw new ArgumentNullException(nameof(configService));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        public async Task ExecuteNonQueryAsync(string query, params SqlParameter[] parameters)
+        public async Task<DataTable> ExecuteQueryAsync(string query, SqlParameter[] parameters = null)
         {
-            using (var connection = new SqlConnection(_connectionString))
+            try
             {
-                await connection.OpenAsync();
-                using (var command = new SqlCommand(query, connection))
+                using (var connection = new SqlConnection(_configService.GetConnectionString()))
                 {
-                    command.Parameters.AddRange(parameters);
-                    await command.ExecuteNonQueryAsync();
-                }
-            }
-        }
-        public async Task<DataTable> ExecuteQueryAsync(string query, SqlParameter[] parameters)
-        {
-            using (var connection = new SqlConnection(_connectionString))
-            {
-                await connection.OpenAsync();
-                using (var command = new SqlCommand(query, connection))
-                {
-                    if (parameters != null)
+                    await connection.OpenAsync();
+                    using (var command = new SqlCommand(query, connection))
                     {
-                        command.Parameters.AddRange(parameters);
-                    }
+                        if (parameters != null)
+                        {
+                            command.Parameters.AddRange(parameters);
+                        }
 
-                    using (var adapter = new SqlDataAdapter(command))
-                    {
-                        var dataTable = new DataTable();
-                        adapter.Fill(dataTable);
-                        return dataTable;
+                        using (var reader = await command.ExecuteReaderAsync())
+                        {
+                            var dataTable = new DataTable();
+                            dataTable.Load(reader);
+                            return dataTable;
+                        }
                     }
                 }
             }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Ошибка выполнения запроса: {query}");
+                throw;
+            }
         }
 
-        public async Task<object> ExecuteScalarAsync(string query, params SqlParameter[] parameters)
+        public async Task<object> ExecuteScalarAsync(string query, SqlParameter[] parameters = null)
         {
-            using (var connection = new SqlConnection(_connectionString))
+            try
             {
-                await connection.OpenAsync();
-                using (var command = new SqlCommand(query, connection))
+                using (var connection = new SqlConnection(_configService.GetConnectionString()))
                 {
-                    command.Parameters.AddRange(parameters);
-                    return await command.ExecuteScalarAsync();
+                    await connection.OpenAsync();
+                    using (var command = new SqlCommand(query, connection))
+                    {
+                        if (parameters != null)
+                        {
+                            command.Parameters.AddRange(parameters);
+                        }
+                        return await command.ExecuteScalarAsync();
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Ошибка выполнения скалярного запроса: {query}");
+                throw;
+            }
+        }
+
+        public async Task<int> ExecuteNonQueryAsync(string query, SqlParameter[] parameters = null)
+        {
+            try
+            {
+                using (var connection = new SqlConnection(_configService.GetConnectionString()))
+                {
+                    await connection.OpenAsync();
+                    using (var command = new SqlCommand(query, connection))
+                    {
+                        if (parameters != null)
+                        {
+                            command.Parameters.AddRange(parameters);
+                        }
+                        return await command.ExecuteNonQueryAsync();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Ошибка выполнения non-query: {query}");
+                throw;
             }
         }
     }

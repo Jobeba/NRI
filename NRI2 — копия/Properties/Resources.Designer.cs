@@ -59,5 +59,95 @@ namespace NRI.Properties {
                 resourceCulture = value;
             }
         }
+        
+        /// <summary>
+        ///   Поиск локализованного ресурса типа System.Byte[].
+        /// </summary>
+        internal static byte[] call_of_Ctulhu_template {
+            get {
+                object obj = ResourceManager.GetObject("call_of_Ctulhu_template", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Поиск локализованного ресурса типа System.Byte[].
+        /// </summary>
+        internal static byte[] critical_fail {
+            get {
+                object obj = ResourceManager.GetObject("critical_fail", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Поиск локализованного ресурса типа System.Byte[].
+        /// </summary>
+        internal static byte[] critical_fail_2 {
+            get {
+                object obj = ResourceManager.GetObject("critical_fail_2", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Поиск локализованного ресурса типа System.Byte[].
+        /// </summary>
+        internal static byte[] critical_success {
+            get {
+                object obj = ResourceManager.GetObject("critical_success", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Поиск локализованного ресурса типа System.Byte[].
+        /// </summary>
+        internal static byte[] critical_success_2 {
+            get {
+                object obj = ResourceManager.GetObject("critical_success_2", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Поиск локализованного ресурса типа System.Byte[].
+        /// </summary>
+        internal static byte[] cthulhu_background {
+            get {
+                object obj = ResourceManager.GetObject("cthulhu_background", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Поиск локализованного ресурса типа System.Byte[].
+        /// </summary>
+        internal static byte[] dnd_background {
+            get {
+                object obj = ResourceManager.GetObject("dnd_background", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Поиск локализованного ресурса типа System.Byte[].
+        /// </summary>
+        internal static byte[] pathfinder_template {
+            get {
+                object obj = ResourceManager.GetObject("pathfinder_template", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Поиск локализованного ресурса типа System.Byte[].
+        /// </summary>
+        internal static byte[] rolling_the_dice {
+            get {
+                object obj = ResourceManager.GetObject("rolling_the_dice", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
     }
 }

@@ -1,34 +1,244 @@
-﻿<Window 
+﻿<Window x:Class="NRI.Registrasya"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:NRI"
-        xmlns:gif="http://wpfanimatedgif.codeplex.com" x:Class="NRI.Registrasya"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        xmlns:gif="http://wpfanimatedgif.codeplex.com"
         mc:Ignorable="d"
-        Title="Registrasya"  Height="420" Width="800">
-    <Window.Background>
-        <VisualBrush>
-            <VisualBrush.Visual>
-                <Image gif:ImageBehavior.AnimatedSource="image/Irithyll.gif" />
-            </VisualBrush.Visual>
-        </VisualBrush>
-    </Window.Background>
-    <Grid Margin="0,0,0,1" >
+        Title="Регистрация" 
+        Height="800" 
+        Width="800"
+        WindowStartupLocation="CenterScreen"
+        WindowState="Maximized"
+        Style="{DynamicResource MaterialDesignWindow}">
+    
+    <Window.Resources>
+        <Style x:Key="SuccessMessageStyle" TargetType="TextBlock" BasedOn="{StaticResource MaterialDesignBody1TextBlock}">
+            <Setter Property="Margin" Value="0,5"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+        </Style>
 
-        <TextBlock Foreground="Snow" x:Name="textBlock" Style="{StaticResource CustomFont}" HorizontalAlignment="Center" Margin="0,39,0,0" TextWrapping="Wrap" Text="Регистрация" FontSize="25" Width="800" VerticalAlignment="Top" TextAlignment="Center"/>
-        <Label Foreground="Snow" x:Name="Login" Style="{StaticResource CustomFont}" Content="Логин" HorizontalAlignment="Left" Margin="255,206,0,0" VerticalAlignment="Top" FontSize="20"/>
-        <Label Foreground="Snow" x:Name="Password" Style="{StaticResource CustomFont}" Content="Пароль" HorizontalAlignment="Left" Margin="244,243,0,0" VerticalAlignment="Top" FontSize="20"/>
-        <Label Foreground="Snow" x:Name="label" Style="{StaticResource CustomFont}" Content="ФИО" HorizontalAlignment="Left" Margin="270,160,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.091,0.182" FontSize="20"/>
-        <Button  x:Name="Registr_button" Style="{StaticResource CustomFont}" Content="Зарегистрироваться" HorizontalAlignment="Left" Margin="309,305,0,0" Width="212" FontSize="16" Click="Registr_button_Click" Height="35" VerticalAlignment="Top"/>
-        <TextBox x:Name="Login_textbox" HorizontalAlignment="Left" Height="23" Margin="373,0,0,177" TextWrapping="Wrap" Text="" VerticalAlignment="Bottom" Width="148"/>
-        <TextBox x:Name="FullName_textbox" HorizontalAlignment="Left" Height="23" Margin="373,0,0,227" TextWrapping="Wrap" Text="" VerticalAlignment="Bottom" Width="148"/>
-        <Label FontWeight="Bold" Foreground="Snow"  x:Name="Title" Style="{StaticResource CustomFont}" Grid.Row="0"  Content="Интеллектуальный клуб настольных Игр" FontSize="24" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Height="39" VerticalAlignment="Top" HorizontalAlignment="Center" Width="800"/>
-        <PasswordBox x:Name="passwordBox" HorizontalAlignment="Left" Margin="373,0,0,135" VerticalAlignment="Bottom" Height="23" Width="148"/>
-        <Label Foreground="Snow" x:Name="Number_Telephone" Style="{StaticResource CustomFont}" Content="Телефон" HorizontalAlignment="Left" Margin="231,0,0,272" VerticalAlignment="Bottom" FontSize="20"/>
-        <TextBox x:Name="Number_telephone" HorizontalAlignment="Right" Height="23" Margin="0,0,279,281" TextWrapping="Wrap" Text="" VerticalAlignment="Bottom" Width="148" MaxLength="11"/>
-        <TextBlock Foreground="Snow" HorizontalAlignment="Left"  Style="{StaticResource CustomFont}" Margin="225,360,0,0" RenderTransformOrigin="0.644,0.667" FontSize="18" Height="40" VerticalAlignment="Top" ><Run Text="Вы уже зарегистрировались?, то "/><Hyperlink NavigateUri="Registrasya.xaml" Click="Hyperlink_Click"><Run Text="нажмите сюда"/></Hyperlink></TextBlock>
+        <Style x:Key="SecretKeyBoxStyle" TargetType="TextBox">
+            <Setter Property="FontFamily" Value="Consolas"/>
+            <Setter Property="IsReadOnly" Value="True"/>
+            <Setter Property="Margin" Value="0,0,5,0"/>
+            <Setter Property="MinWidth" Value="250"/>
+        </Style>
+    </Window.Resources>
+    <Grid>
+        <!-- Анимированный фон -->
+        <Image gif:ImageBehavior.AnimatedSource="/Gifs/Irithyll.gif" 
+               Stretch="UniformToFill">
+            <Image.Effect>
+                <BlurEffect Radius="8"/>
+            </Image.Effect>
+        </Image>
+        <materialDesign:DialogHost x:Name="RootDialogHost" 
+                             Identifier="RootDialog"
+                             CloseOnClickAway="True">
+            
 
+            <Grid Margin="20">
+            <!-- Карточка для формы регистрации -->
+                <materialDesign:Card UniformCornerRadius="6" 
+                                Padding="20" 
+                                VerticalAlignment="Center" 
+                                HorizontalAlignment="Center"
+                                Width="600">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" 
+                            HorizontalScrollBarVisibility="Disabled">
+                        <StackPanel Width="400">
+                            <!-- Заголовок -->
+                            <TextBlock Text="Регистрация"
+                                FontFamily="{DynamicResource LightFont}"
+                                Style="{StaticResource MaterialDesignHeadline4TextBlock}"
+                                Foreground="{DynamicResource PrimaryHueMidBrush}"
+                                HorizontalAlignment="Center"
+                                Margin="0,0,0,20"/>
+
+                            <!-- Snackbar -->
+                            <materialDesign:Snackbar x:Name="Snackbar"
+                                    HorizontalAlignment="Stretch"
+                                    VerticalAlignment="Bottom"
+                                    Margin="0,0,0,20"
+                                    Panel.ZIndex="999"
+                                    MaxHeight="200">
+                                <materialDesign:Snackbar.MessageQueue>
+                                    <materialDesign:MessageQueue />
+                                </materialDesign:Snackbar.MessageQueue>
+                            </materialDesign:Snackbar>
+                            <!-- Основные поля -->
+                            <TextBox x:Name="FullName_textbox" 
+                                FontFamily="{DynamicResource LightFont}"
+                                materialDesign:HintAssist.Hint="ФИО" 
+                                Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                                Margin="0,10,0,0"/>
+
+                            <TextBox x:Name="Number_telephone" 
+                                FontFamily="{DynamicResource LightFont}"
+                                materialDesign:HintAssist.Hint="Телефон" 
+                                Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                                MaxLength="11"
+                                Margin="0,10,0,0"/>
+
+                            <TextBox x:Name="Login_textbox" 
+                                FontFamily="{DynamicResource LightFont}"
+                                materialDesign:HintAssist.Hint="Логин" 
+                                Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                                Margin="0,10,0,0"/>
+
+                            <!-- Пароль с переключателем -->
+                            <Grid Margin="0,10,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <PasswordBox x:Name="passwordBox" 
+                                        FontFamily="{DynamicResource LightFont}"
+                                        materialDesign:HintAssist.Hint="Пароль" 
+                                        Style="{StaticResource MaterialDesignFloatingHintPasswordBox}"
+                                        PasswordChanged="PasswordBox_PasswordChanged"/>
+
+                                <TextBox x:Name="_passwordTextBox"
+                                    FontFamily="{DynamicResource LightFont}"
+                                    Grid.Column="0"
+                                    Margin="10"
+                                    FontSize="14"
+                                    Visibility="Collapsed"
+                                    Opacity="0"
+                                    materialDesign:HintAssist.Hint="Пароль (видимый)"
+                                    Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                                    TextChanged="_passwordTextBox_TextChanged"/>
+
+                                <Button x:Name="TogglePasswordButton" 
+                                    Style="{StaticResource MaterialDesignIconButton}"
+                                    Grid.Column="1"
+                                    Margin="5,0,0,0"
+                                    Click="TogglePasswordVisibility">
+                                    <materialDesign:PackIcon Kind="Eye" />
+                                </Button>
+                            </Grid>
+
+                            <!-- Индикатор сложности пароля -->
+                            <StackPanel Margin="0,10,0,0">
+                                <ProgressBar x:Name="passwordStrengthProgressBar" 
+                                        Value="{Binding PasswordStrength}" 
+                                        Minimum="0" 
+                                        Maximum="100"
+                                        Style="{StaticResource MaterialDesignLinearProgressBar}"
+                                        Margin="0,5,0,0"
+                                        Foreground="{DynamicResource PrimaryHueMidBrush}"/>
+
+                                <TextBlock Text="{Binding PasswordHint}"
+                                    FontSize="14"
+                                    FontFamily="{DynamicResource LightFont}"
+                                    Foreground="{DynamicResource PrimaryHueMidBrush}"
+                                    Margin="0,5,0,0"
+                                    HorizontalAlignment="Center"/>
+
+                                <TextBlock Text="Требования к паролю:"
+                                    FontSize="16"
+                                    FontFamily="{DynamicResource LightFont}"
+                                    Foreground="{DynamicResource PrimaryHueMidBrush}"
+                                    Margin="0,5,0,0"
+                                    FontWeight="Bold"/>
+
+                                <CheckBox x:Name="PasswordLengthCheckBox"
+                                   FontSize="14"
+                                   FontFamily="{DynamicResource LightFont}"
+                                   Content="Минимум 6 символов" 
+                                   IsEnabled="False"
+                                   Margin="10,5,0,0"/>
+
+                                <CheckBox x:Name="PasswordDigitCheckBox" 
+                                  FontSize="14"        
+                                  FontFamily="{DynamicResource LightFont}"
+                                  Content="Содержит цифры" 
+                                  IsEnabled="False"
+                                  Margin="10,5,0,0"/>
+
+                                <CheckBox x:Name="PasswordLowercaseCheckBox"
+                                  FontSize="14"        
+                                  FontFamily="{DynamicResource LightFont}"        
+                                  Content="Содержит строчные буквы" 
+                                  IsEnabled="False"
+                                  Margin="10,5,0,0"/>
+
+                                <CheckBox x:Name="PasswordUppercaseCheckBox"
+                                  FontSize="14"
+                                  FontFamily="{DynamicResource LightFont}"
+                                  Content="Содержит заглавные буквы" 
+                                  IsEnabled="False"
+                                  Margin="10,5,0,0"/>
+
+                                <CheckBox x:Name="PasswordSpecialCharCheckBox"
+                                  FontSize="14"
+                                  FontFamily="{DynamicResource LightFont}"
+                                  Content="Содержит специальные символы" 
+                                  IsEnabled="False"
+                                  Margin="10,5,0,0"/>
+                            </StackPanel>
+
+                            <!-- Блок 2FA -->
+                            <Border x:Name="TwoFactorSection"
+                                Visibility="Collapsed"
+                                Padding="10"
+                                BorderBrush="{DynamicResource PrimaryHueMidBrush}"
+                                BorderThickness="1"
+                                CornerRadius="4"
+                                Margin="0,20,0,0">
+                                <StackPanel>
+                                    <Image x:Name="QrCodeImage"
+                                        Width="200"
+                                        Height="200"
+                                        HorizontalAlignment="Center"
+                                        Margin="0,0,0,10"/>
+
+                                    <TextBlock Text="Секретный ключ:"
+                                        Style="{StaticResource MaterialDesignSubtitle1TextBlock}"
+                                        FontFamily="{DynamicResource LightFont}"/>
+
+                                    <TextBox x:Name="SecretKeyBox"
+                                        IsReadOnly="True"
+                                        Margin="0,5,0,10"
+                                        FontFamily="{DynamicResource LightFont}"/>
+
+                                    <TextBox x:Name="TwoFactorCodeBox"
+                                        materialDesign:HintAssist.Hint="Код из приложения"
+                                        Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                                        Margin="0,0,0,10"
+                                        FontFamily="{DynamicResource LightFont}"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Управляющие кнопки -->
+                            <Button x:Name="RegisterButton"                              
+                            Content="Зарегистрироваться"
+                            Style="{DynamicResource MaterialDesignRaisedButton}"
+                            Margin="0,20,0,10"
+                            Click="RegisterButton_Click_Handler"/>
+
+                            <StackPanel Orientation="Horizontal" 
+                                  HorizontalAlignment="Right"
+                                  Margin="0,10,0,0"/>
+
+                            <!-- Ссылка на авторизацию -->
+                            <TextBlock HorizontalAlignment="Center"
+                                   FontSize="14"
+                                   FontFamily="{DynamicResource LightFont}"
+                                   Margin="0,10,0,0">
+                            <Hyperlink x:Name="RegistrationHyperlink" Click="Hyperlink_Click">
+                                <Run Text="Уже зарегистрированы? Войдите здесь"/>
+                            </Hyperlink>
+                            </TextBlock>
+                        </StackPanel>
+                    </ScrollViewer>
+                </materialDesign:Card>
+                
+            </Grid>
+        </materialDesign:DialogHost>
+        <materialDesign:Flipper HorizontalAlignment="Left" Height="25" Margin="-427,601,0,0" VerticalAlignment="Top" Width="17"/>
     </Grid>
-
 </Window>

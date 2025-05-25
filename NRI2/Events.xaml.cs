@@ -8,9 +8,7 @@ using System.Windows;
 using System.Collections.ObjectModel;
 using Microsoft.EntityFrameworkCore;
 using NRI.Models;
-using System.Windows.Media.Animation;
-using System.Windows.Media;
-using System.Windows.Controls;
+using NRI.Data;
 
 namespace NRI
 {
@@ -18,9 +16,9 @@ namespace NRI
     {
         private readonly EventsViewModel _viewModel;
         private readonly ILogger<Models.Events> _logger;
-        private readonly EventContext _context;
+        private readonly AppDbContext _context;
 
-        public Events(EventsViewModel viewModel, ILogger<Models.Events> logger, EventContext context)
+        public Events(EventsViewModel viewModel, ILogger<Models.Events> logger, AppDbContext context)
         {
             InitializeComponent();
             _viewModel = viewModel;
@@ -30,64 +28,19 @@ namespace NRI
             LoadEvents();
         }
 
-        private async void LoadEvents()
+        private void LoadEvents()
         {
-            try
-            {
-                var events = await _context.Events.ToListAsync();
-                _viewModel.Events = new ObservableCollection<Models.Events>(events);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Ошибка при загрузке данных: {ex.Message}");
-            }
+
         }
 
-        private async void SaveButton_Click(object sender, RoutedEventArgs e)
+        private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
-            using (var transaction = await _context.Database.BeginTransactionAsync())
-            {
-                try
-                {
-                    // Сохраняем изменения в базе данных
-                    await _context.SaveChangesAsync();
-
-                    // Фиксируем транзакцию
-                    await transaction.CommitAsync();
-
-                    MessageBox.Show("Изменения успешно сохранены.");
-                }
-                catch (Exception ex)
-                {
-                    // Откатываем транзакцию в случае ошибки
-                    await transaction.RollbackAsync();
-                    MessageBox.Show($"Ошибка при сохранении: {ex.Message}");
-                }
-            }
+            // Реализация сохранения
         }
 
-        private async void DeleteButton_Click(object sender, RoutedEventArgs e)
+        private void DeleteButton_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                var selectedEvent = eventsDataGrid.SelectedItem as Models.Events;
-
-                if (selectedEvent == null)
-                {
-                    MessageBox.Show("Выберите событие для удаления.");
-                    return;
-                }
-
-                _context.Events.Remove(selectedEvent);
-                await _context.SaveChangesAsync();
-                _viewModel.Events.Remove(selectedEvent);
-
-                MessageBox.Show("Событие успешно удалено.");
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Ошибка при удалении: {ex.Message}");
-            }
+            // Реализация удаления
         }
 
         private void MainMenu_Click(object sender, RoutedEventArgs e)
@@ -106,6 +59,17 @@ namespace NRI
         {
             base.OnClosed(e);
             _logger.LogInformation("Окно событий закрыто.");
+        }
+
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+
+            NRI.Kasyanov_NRIDataSet kasyanov_NRIDataSet = ((NRI.Kasyanov_NRIDataSet)(this.FindResource("kasyanov_NRIDataSet")));
+            // Загрузить данные в таблицу Events. Можно изменить этот код как требуется.
+            NRI.Kasyanov_NRIDataSetTableAdapters.EventsTableAdapter kasyanov_NRIDataSetEventsTableAdapter = new NRI.Kasyanov_NRIDataSetTableAdapters.EventsTableAdapter();
+            kasyanov_NRIDataSetEventsTableAdapter.Fill(kasyanov_NRIDataSet.Events);
+            System.Windows.Data.CollectionViewSource eventsViewSource = ((System.Windows.Data.CollectionViewSource)(this.FindResource("eventsViewSource")));
+            eventsViewSource.View.MoveCurrentToFirst();
         }
     }
 }

@@ -1,0 +1,1425 @@
+﻿<Page x:Class="NRI.Pages.DiceRollerPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:helix="http://helix-toolkit.org/wpf" 
+      xmlns:vm="clr-namespace:NRI.DiceRoll"
+      xmlns:sys="clr-namespace:System;assembly=mscorlib"
+      xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:local="clr-namespace:NRI.DiceRoll"
+      xmlns:convert="clr-namespace:NRI.Converters"
+      xmlns:media="clr-namespace:System.Windows.Media;assembly=PresentationCore"
+      mc:Ignorable="d"
+      d:DesignHeight="600" d:DesignWidth="900"
+      Title="Dice Roller"
+      Background="#FF2D2D30" Foreground="White">
+
+    <Page.Resources>
+           
+        <convert:SystemToColorConverter x:Key="SystemToColorConverter"/>
+        <convert:SystemToColorBrushConverter x:Key="SystemToColorBrushConverter"/>
+        <convert:SystemToIconConverter x:Key="SystemToIconConverter"/>
+
+        <convert:MillisecondsToTimeSpanConverter x:Key="MillisecondsToTimeSpanConverter" />
+        <convert:ImagePathToImageSourceConverter x:Key="ImagePathConverter"/>
+        <convert:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
+        <convert:BrushToColorConverter x:Key="BrushToColorConverter"/>
+        <convert:ColorToBrushConverter x:Key="ColorToBrushConverter"/>
+        <convert:DoubleConverter x:Key="DoubleConverter"/>
+                     
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+                
+        <x:Array x:Key="TextColors" Type="Color">
+            <Color>Black</Color>
+            <Color>White</Color>
+            <Color>Red</Color>
+            <Color>Green</Color>
+            <Color>Blue</Color>
+            <Color>Yellow</Color>
+            <Color>Orange</Color>
+            <Color>Purple</Color>
+            <Color>Pink</Color>
+            <Color>Brown</Color>
+            <Color>Gray</Color>
+        </x:Array>
+
+        <Style x:Key="DiceResultStyle" TargetType="TextBlock">
+            <!-- Основные свойства -->
+            <Setter Property="FontSize" Value="24"/>
+            <Setter Property="Width" Value="50"/>
+            <Setter Property="Height" Value="50"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="5"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="#FF3E3E40"/>
+            <Setter Property="TextAlignment" Value="Center"/>
+            <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
+            <Setter Property="RenderTransform">
+                <Setter.Value>
+                    <TransformGroup>
+                        <RotateTransform/>
+                        <ScaleTransform ScaleX="1" ScaleY="1"/>
+                    </TransformGroup>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <!-- Для D20: зеленый если 20 (критический успех) -->
+                <MultiDataTrigger>
+                    <MultiDataTrigger.Conditions>
+                        <Condition Binding="{Binding DataContext.SelectedRoll.DiceType, 
+                   RelativeSource={RelativeSource AncestorType=Page}}" 
+                   Value="D20"/>
+                        <Condition Binding="{Binding}" Value="20"/>
+                    </MultiDataTrigger.Conditions>
+                    <Setter Property="Background" Value="#FF4CAF50"/>
+                    <Setter Property="FontWeight" Value="Bold"/>
+                    <Setter Property="Effect">
+                        <Setter.Value>
+                            <DropShadowEffect Color="Lime" BlurRadius="10" ShadowDepth="0"/>
+                        </Setter.Value>
+                    </Setter>
+                </MultiDataTrigger>
+
+                <!-- Для D20: красный если 1 (критический провал) -->
+                <MultiDataTrigger>
+                    <MultiDataTrigger.Conditions>
+                        <Condition Binding="{Binding DataContext.SelectedRoll.DiceType, 
+                   RelativeSource={RelativeSource AncestorType=Page}}" 
+                   Value="D20"/>
+                        <Condition Binding="{Binding}" Value="1"/>
+                    </MultiDataTrigger.Conditions>
+                    <Setter Property="Background" Value="#FFF44336"/>
+                    <Setter Property="FontWeight" Value="Bold"/>
+                    <Setter Property="Effect">
+                        <Setter.Value>
+                            <DropShadowEffect Color="Red" BlurRadius="10" ShadowDepth="0"/>
+                        </Setter.Value>
+                    </Setter>
+                </MultiDataTrigger>
+
+                <!-- Для D100 в системе Call of Cthulhu: зеленый если 1 (критический успех) -->
+                <MultiDataTrigger>
+                    <MultiDataTrigger.Conditions>
+                        <Condition Binding="{Binding DataContext.SelectedRoll.DiceType, 
+                   RelativeSource={RelativeSource AncestorType=Page}}" 
+                   Value="D100"/>
+                        <Condition Binding="{Binding DataContext.SelectedCharacter.System,
+                   RelativeSource={RelativeSource AncestorType=Page}}"
+                   Value="Call of Cthulhu"/>
+                        <Condition Binding="{Binding}" Value="1"/>
+                    </MultiDataTrigger.Conditions>
+                    <Setter Property="Background" Value="#FF4CAF50"/>
+                    <Setter Property="FontWeight" Value="Bold"/>
+                    <Setter Property="Effect">
+                        <Setter.Value>
+                            <DropShadowEffect Color="Lime" BlurRadius="10" ShadowDepth="0"/>
+                        </Setter.Value>
+                    </Setter>
+                </MultiDataTrigger>
+
+                <!-- Для D100 в системе Call of Cthulhu: красный если 100 (критический провал) -->
+                <MultiDataTrigger>
+                    <MultiDataTrigger.Conditions>
+                        <Condition Binding="{Binding DataContext.SelectedRoll.DiceType, 
+                   RelativeSource={RelativeSource AncestorType=Page}}" 
+                   Value="D100"/>
+                        <Condition Binding="{Binding DataContext.SelectedCharacter.System,
+                   RelativeSource={RelativeSource AncestorType=Page}}"
+                   Value="Call of Cthulhu"/>
+                        <Condition Binding="{Binding}" Value="100"/>
+                    </MultiDataTrigger.Conditions>
+                    <Setter Property="Background" Value="#FFF44336"/>
+                    <Setter Property="FontWeight" Value="Bold"/>
+                    <Setter Property="Effect">
+                        <Setter.Value>
+                            <DropShadowEffect Color="Red" BlurRadius="10" ShadowDepth="0"/>
+                        </Setter.Value>
+                    </Setter>
+                </MultiDataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="D20RollAnimation" TargetType="TextBlock">
+            <Setter Property="RenderTransform">
+                <Setter.Value>
+                    <TransformGroup>
+                        <RotateTransform/>
+                        <ScaleTransform/>
+                    </TransformGroup>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <EventTrigger RoutedEvent="Loaded">
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <!-- Эпичная анимация для D20 -->
+                            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[0].(RotateTransform.Angle)">
+                                <SplineDoubleKeyFrame KeyTime="0:0:0.0" Value="0"/>
+                                <SplineDoubleKeyFrame KeyTime="0:0:0.3" Value="360"/>
+                                <SplineDoubleKeyFrame KeyTime="0:0:0.6" Value="720"/>
+                            </DoubleAnimationUsingKeyFrames>
+                            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[1].(ScaleTransform.ScaleX)">
+                                <SplineDoubleKeyFrame KeyTime="0:0:0.0" Value="1"/>
+                                <SplineDoubleKeyFrame KeyTime="0:0:0.3" Value="1.5"/>
+                                <SplineDoubleKeyFrame KeyTime="0:0:0.6" Value="1"/>
+                            </DoubleAnimationUsingKeyFrames>
+                        </Storyboard>
+                    </BeginStoryboard>
+                </EventTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="D100RollAnimation" TargetType="TextBlock">
+            <Setter Property="RenderTransform">
+                <Setter.Value>
+                    <TransformGroup>
+                        <RotateTransform/>
+                        <ScaleTransform/>
+                    </TransformGroup>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <EventTrigger RoutedEvent="Loaded">
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <!-- Мрачная анимация для D100 (CoC) -->
+                            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[0].(RotateTransform.Angle)">
+                                <SplineDoubleKeyFrame KeyTime="0:0:0.0" Value="0"/>
+                                <SplineDoubleKeyFrame KeyTime="0:0:0.5" Value="360" KeySpline="0,0,1,1"/>
+                            </DoubleAnimationUsingKeyFrames>
+                            <ColorAnimationUsingKeyFrames Storyboard.TargetProperty="Background.Color">
+                                <!-- Используем DiscreteColorKeyFrame вместо ColorKeyFrame -->
+                                <DiscreteColorKeyFrame KeyTime="0:0:0.0" Value="Black"/>
+                                <DiscreteColorKeyFrame KeyTime="0:0:0.5" Value="DarkRed"/>
+                            </ColorAnimationUsingKeyFrames>
+                        </Storyboard>
+                    </BeginStoryboard>
+                </EventTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style TargetType="TextBlock">
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        
+        <Style TargetType="TextBox">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
+        
+        <Color x:Key="DndColor">#FF7B1FA2</Color>
+        <!-- Фиолетовый для D&D -->
+        <Color x:Key="PathfinderColor">#FFD32F2F</Color>
+        <!-- Красный для Pathfinder -->
+        <Color x:Key="CthulhuColor">#FF1976D2</Color>
+        <!-- Синий для Call of Cthulhu -->
+        <Color x:Key="DefaultColor">#FF616161</Color>
+        
+        <!-- Кисти для элементов интерфейса -->
+        <SolidColorBrush x:Key="SystemAccentBrush" 
+                         Color="{Binding SelectedCharacter.System, 
+                         Converter={StaticResource SystemToColorConverter},
+                         FallbackValue=Gray}"/>
+        <!-- Стиль для вкладок с учетом системы -->
+
+        <Style x:Key="SystemTabItemStyle" TargetType="TabItem" BasedOn="{StaticResource MaterialDesignTabItem}">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="{StaticResource SystemAccentBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource SystemAccentBrush}"/>
+            <Setter Property="BorderThickness" Value="0,0,0,2"/>
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="BorderThickness" Value="0,0,0,4"/>
+                    <Setter Property="FontWeight" Value="Bold"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+
+
+        <Style TargetType="ContentPresenter" x:Key="SystemTransitionStyle">
+            <Setter Property="RenderTransform">
+                <Setter.Value>
+                    <TranslateTransform X="0"/>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding CurrentCharacter.System}" Value="D&amp;D 5e">
+
+                    <DataTrigger.EnterActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <ColorAnimation Storyboard.TargetProperty="Background.Color"
+                                   To="{StaticResource DndColor}" Duration="0:0:0.3"/>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </DataTrigger.EnterActions>
+                </DataTrigger>
+
+                <DataTrigger Binding="{Binding CurrentCharacter.System}" Value="Pathfinder">
+                    <DataTrigger.EnterActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <ColorAnimation Storyboard.TargetProperty="Background.Color"
+                                       To="{StaticResource PathfinderColor}" Duration="0:0:0.3"/>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </DataTrigger.EnterActions>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding CurrentCharacter.System}" Value="Call of Cthulhu">
+                    <DataTrigger.EnterActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <ColorAnimation Storyboard.TargetProperty="Background.Color"
+                                       To="{StaticResource CthulhuColor}" Duration="0:0:0.3"/>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </DataTrigger.EnterActions>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+        
+        <Style x:Key="BaseBorderStyle" TargetType="Border">
+            <Setter Property="Background" Value="#252526"/>
+            <Setter Property="BorderBrush" Value="#FF3E3E40"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="5"/>
+            <Setter Property="Padding" Value="5"/>
+            <Setter Property="Margin" Value="5"/>
+        </Style>
+        
+        <!-- Стиль для карточек персонажей -->
+        <Style x:Key="SystemCharacterCardStyle" TargetType="Border">
+            <Setter Property="Background" Value="#252526"/>
+            <Setter Property="BorderBrush" Value="{Binding DataContext.SelectedCharacter.System, 
+                      RelativeSource={RelativeSource AncestorType=Page},
+                      Converter={StaticResource SystemToColorBrushConverter}}"/>
+            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="CornerRadius" Value="5"/>
+            <Setter Property="Padding" Value="10"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect 
+                Color="{Binding DataContext.SelectedCharacter.System,
+                       RelativeSource={RelativeSource AncestorType=Page},
+                       Converter={StaticResource SystemToColorConverter}}"
+                BlurRadius="10" 
+                Opacity="0.3"/>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <DataTemplate x:Key="DiceTemplate">
+            <TextBlock Text="{Binding}" Style="{StaticResource DiceResultStyle}"/>
+        </DataTemplate>
+
+        <DataTemplate x:Key="SystemIconTemplate">
+            <Image Source="{Binding Converter={StaticResource SystemToIconConverter}}"
+                   Width="20" Height="20" Margin="0,0,5,0"/>
+        </DataTemplate>
+
+        <DataTemplate x:Key="ClassFeaturesTemplate">
+            <ScrollViewer Style="{StaticResource TabContentStyle}">
+                <StackPanel>
+                    <TextBlock Text="Классовые особенности" Style="{StaticResource SectionHeaderStyle}"/>
+                    <TextBox Text="{Binding ClassFeatures}" 
+                     Style="{StaticResource FieldValueStyle}"
+                     AcceptsReturn="True"
+                     TextWrapping="Wrap"
+                     MinHeight="100"/>
+
+                    <TextBlock Text="Черты характера" Style="{StaticResource SectionHeaderStyle}"/>
+                    <TextBox Text="{Binding PersonalityTraits}" 
+                     Style="{StaticResource FieldValueStyle}"
+                     AcceptsReturn="True"
+                     TextWrapping="Wrap"
+                     MinHeight="60"/>
+
+                    <TextBlock Text="Идеалы" Style="{StaticResource SectionHeaderStyle}"/>
+                    <TextBox Text="{Binding Ideals}" 
+                     Style="{StaticResource FieldValueStyle}"
+                     AcceptsReturn="True"
+                     TextWrapping="Wrap"
+                     MinHeight="60"/>
+
+                    <TextBlock Text="Привязанности" Style="{StaticResource SectionHeaderStyle}"/>
+                    <TextBox Text="{Binding Bonds}" 
+                     Style="{StaticResource FieldValueStyle}"
+                     AcceptsReturn="True"
+                     TextWrapping="Wrap"
+                     MinHeight="60"/>
+
+                    <TextBlock Text="Слабости" Style="{StaticResource SectionHeaderStyle}"/>
+
+                    <TextBox Text="{Binding Flaws}" 
+                     Style="{StaticResource FieldValueStyle}"
+                     AcceptsReturn="True"
+                     TextWrapping="Wrap"
+                     MinHeight="60"/>
+                </StackPanel>
+            </ScrollViewer>
+        </DataTemplate>
+
+        <DataTemplate x:Key="AdditionalInfoTemplate">
+            <ScrollViewer Style="{StaticResource TabContentStyle}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Text="Предыстория" Grid.Row="0" Style="{StaticResource SectionHeaderStyle}"/>
+                    <TextBox Text="{Binding Background}" Grid.Row="1"
+                     Style="{StaticResource FieldValueStyle}"
+                     AcceptsReturn="True"
+                     TextWrapping="Wrap"
+                     MinHeight="80"/>
+
+                    <TextBlock Text="Опыт" Grid.Row="2" Style="{StaticResource SectionHeaderStyle}"/>
+                    <TextBox Text="{Binding ExperiencePoints}" Grid.Row="3"
+                     Style="{StaticResource FieldValueStyle}"/>
+
+                    <TextBlock Text="Мировоззрение" Grid.Row="4" Style="{StaticResource SectionHeaderStyle}"/>
+                    <ComboBox ItemsSource="{Binding DataContext.Alignments, RelativeSource={RelativeSource AncestorType=Page}}" 
+                      SelectedItem="{Binding Alignment}" Grid.Row="5"
+                      Style="{StaticResource MaterialDesignComboBox}"
+                      Margin="0,0,0,10"/>
+
+                    <TextBlock Text="Внешность" Grid.Row="6" Style="{StaticResource SectionHeaderStyle}"/>
+                    <TextBox Text="{Binding Appearance}" Grid.Row="7"
+                     Style="{StaticResource FieldValueStyle}"
+                     AcceptsReturn="True"
+                     TextWrapping="Wrap"
+                     MinHeight="80"/>
+                </Grid>
+            </ScrollViewer>
+        </DataTemplate>
+
+
+        <!-- Основные цвета -->
+        <Color x:Key="BackgroundColor">#FF2D2D30</Color>
+        <Color x:Key="ForegroundColor">#FFFFFFFF</Color>
+        <Color x:Key="AccentColor">#FF4CAF50</Color>
+        <Color x:Key="ErrorColor">#FFF44336</Color>
+        <Color x:Key="PanelColor">#FF252526</Color>
+        <Color x:Key="BorderColor">#FF3E3E40</Color>
+        <Color x:Key="HighlightColor">#FF007ACC</Color>
+        
+        <!-- Кисти -->
+        <SolidColorBrush x:Key="BackgroundBrush" Color="{StaticResource BackgroundColor}"/>
+        <SolidColorBrush x:Key="ForegroundBrush" Color="{StaticResource ForegroundColor}"/>
+        <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}"/>
+        <SolidColorBrush x:Key="ErrorBrush" Color="{StaticResource ErrorColor}"/>
+        <SolidColorBrush x:Key="PanelBrush" Color="{StaticResource PanelColor}"/>
+        <SolidColorBrush x:Key="BorderBrush" Color="{StaticResource BorderColor}"/>
+        <SolidColorBrush x:Key="HighlightBrush" Color="{StaticResource HighlightColor}"/>
+
+        <Style x:Key="TabContentStyle" TargetType="ScrollViewer">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource ForegroundBrush}"/>
+            <Setter Property="Padding" Value="5"/>
+            <Setter Property="VerticalScrollBarVisibility" Value="Auto"/>
+            <Setter Property="HorizontalScrollBarVisibility" Value="Disabled"/>
+        </Style>
+
+        <DataTemplate x:Key="NotesTemplate">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <ToolBar Grid.Row="0" Background="#252526">
+                    <!-- Font family combo -->
+                    <ComboBox x:Name="FontFamilyCombo" 
+                    ItemsSource="{x:Static Fonts.SystemFontFamilies}"
+                    SelectedItem="{Binding ElementName=NotesEditor, Path=FontFamily}"
+                    Width="150">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Source}" 
+                               FontFamily="{Binding}"
+                               ToolTip="{Binding Source}"/>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+
+                    <!-- Font size combo (fixed) -->
+                    <ComboBox x:Name="FontSizeCombo"
+                              SelectedValue="{Binding ElementName=NotesEditor, Path=(TextElement.FontSize),
+                              Converter={StaticResource DoubleConverter}}"
+                              Width="60"
+                              Foreground="Black">
+
+                        <ComboBox.ItemsSource>
+
+                            <x:Array Type="sys:Double">
+                                <sys:Double>8</sys:Double>
+                                <sys:Double>10</sys:Double>
+                                <sys:Double>12</sys:Double>
+                                <sys:Double>14</sys:Double>
+                                <sys:Double>16</sys:Double>
+                                <sys:Double>18</sys:Double>
+                                <sys:Double>20</sys:Double>
+                                <sys:Double>22</sys:Double>
+                                <sys:Double>24</sys:Double>
+                            </x:Array>
+                        </ComboBox.ItemsSource>
+                    </ComboBox>
+                    <Separator/>
+
+                    <!-- Formatting buttons -->
+                    <ToggleButton x:Name="BoldButton" Content="B" 
+                                  Command="EditingCommands.ToggleBold"
+                                  CommandTarget="{Binding ElementName=NotesEditor}"
+                                  local:RichTextBoxCommandTargetBehavior.RegisterButton="{Binding RelativeSource={RelativeSource Self}}"
+                                  ToolTip="Жирный"/>
+
+                    <ToggleButton x:Name="ItalicButton" Content="I" 
+                        ToolTip="Курсив"
+                        Command="EditingCommands.ToggleItalic"
+                        CommandTarget="{Binding ElementName=NotesEditor}"/>
+
+                    <ToggleButton x:Name="UnderlineButton" Content="U" 
+                        ToolTip="Подчеркивание"
+                        Command="EditingCommands.ToggleUnderline"
+                        CommandTarget="{Binding ElementName=NotesEditor}"/>
+                    <ToggleButton x:Name="StrikeButton" Content="S" 
+                        ToolTip="Зачеркивание"
+                        Command="EditingCommands.ToggleSubscript"
+                        CommandTarget="{Binding ElementName=NotesEditor}"/>
+                    <Separator/>
+
+                    <!-- Alignment buttons -->
+                    <Button Content="L" 
+                        ToolTip="Выровнять по левому краю"
+                        Command="EditingCommands.AlignLeft"
+                        CommandTarget="{Binding ElementName=NotesEditor}"/>
+                    <Button Content="C" 
+                        ToolTip="Выровнять по центру"
+                        Command="EditingCommands.AlignCenter"
+                        CommandTarget="{Binding ElementName=NotesEditor}"/>
+                    <Button Content="R" 
+                        ToolTip="Выровнять по правому краю"
+                        Command="EditingCommands.AlignRight"
+                        CommandTarget="{Binding ElementName=NotesEditor}"/>
+
+                    <Separator/>
+
+                    <!-- Color picker (fixed) -->
+                    <ComboBox SelectedValue="{Binding ElementName=NotesEditor, Path=Foreground, Converter={StaticResource BrushToColorConverter}}"
+                    ItemsSource="{StaticResource TextColors}"
+                    Width="100"
+                    ToolTip="Цвет текста">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <Rectangle Width="20" Height="20" Fill="{Binding Converter={StaticResource ColorToBrushConverter}}" Margin="0,0,5,0"/>
+                                    <TextBlock Text="{Binding}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </ToolBar>
+
+                <!-- RichTextBox with fixed behaviors -->
+                <RichTextBox x:Name="NotesEditor" Grid.Row="1" 
+                 Background="#FF1E1E1E" Foreground="White"
+                 local:TextSelectionExtensions.FontFamily="{Binding ElementName=FontFamilyCombo, Path=SelectedItem}"
+                 local:TextSelectionExtensions.FontSize="{Binding ElementName=FontSizeCombo, Path=SelectedValue}">
+                    <i:Interaction.Behaviors>
+                        <local:RichTextBoxBindingBehavior RichText="{Binding DataContext.CurrentCharacter.Notes, 
+                                              RelativeSource={RelativeSource AncestorType=Page}, Mode=TwoWay}"/>
+                        <local:RichTextBoxCommandTargetBehavior/>
+                    </i:Interaction.Behaviors>
+                    <FlowDocument/>
+                </RichTextBox>
+            </Grid>
+        </DataTemplate>
+
+        <Style x:Key="SectionHeaderStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
+            <Setter Property="Margin" Value="0,10,0,5"/>
+        </Style>
+
+        <Style x:Key="FieldLabelStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource ForegroundBrush}"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="0,0,5,5"/>
+        </Style>
+
+        <Style x:Key="FieldValueStyle" TargetType="TextBox">
+            <Setter Property="Foreground" Value="{StaticResource ForegroundBrush}"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="0,0,0,1"/>
+            <Setter Property="Margin" Value="0,0,0,5"/>
+            <Setter Property="Padding" Value="2"/>
+            <Setter Property="MinWidth" Value="200"/>
+        </Style>
+        
+        <!-- Стили для элементов управления -->
+        <Style TargetType="ComboBox" BasedOn="{StaticResource MaterialDesignComboBox}">
+            <Setter Property="Foreground" Value="{StaticResource ForegroundBrush}"/>
+        </Style>
+
+        <Style TargetType="GroupBox">
+            <Setter Property="Background" Value="{StaticResource PanelBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource ForegroundBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Margin" Value="5"/>
+            <Setter Property="Padding" Value="5"/>
+        </Style>
+        
+        <Style TargetType="TabControl">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+        </Style>
+
+        <Style TargetType="TabItem" BasedOn="{StaticResource MaterialDesignTabItem}">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource ForegroundBrush}"/>
+            <Setter Property="HeaderTemplate">
+                <Setter.Value>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding}" 
+                           FontWeight="Bold"
+                           Foreground="{StaticResource ForegroundBrush}"/>
+                    </DataTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="Button" BasedOn="{StaticResource MaterialDesignFlatButton}">
+            <Setter Property="Foreground" Value="{StaticResource ForegroundBrush}"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#3FFFFFFF"/>
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Background" Value="#6FFFFFFF"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style TargetType="ListView">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Foreground" Value="{StaticResource ForegroundBrush}"/>
+        </Style>
+
+        <SolidColorBrush x:Key="TextBrush" Color="White"/>
+        <SolidColorBrush x:Key="HeaderBrush" Color="#FF4CAF50"/>
+
+        <!-- Стили для DataGrid -->
+        <Style TargetType="DataGridCell" x:Key="DataGridCellStyle">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="0,0,1,1"/>
+            <Setter Property="Foreground" Value="{StaticResource ForegroundBrush}"/>
+            <Setter Property="Padding" Value="5"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="DataGridCell">
+                        <Grid Background="{TemplateBinding Background}">
+                            <ContentPresenter VerticalAlignment="Center"/>
+                            <Rectangle x:Name="FocusVisual" 
+                               Stroke="Transparent" 
+                               StrokeThickness="1"
+                               Visibility="Collapsed"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="DataGridColumnHeader" x:Key="DataGridColumnHeaderStyle">
+            <Setter Property="Background" Value="#FF252526"/>
+            <Setter Property="Foreground" Value="{StaticResource ForegroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="0,0,1,1"/>
+            <Setter Property="Padding" Value="5"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+        </Style>
+
+        <Style x:Key="InventoryDataGridStyle" TargetType="DataGrid">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="Foreground" Value="Black"/>
+            <Setter Property="RowBackground" Value="White"/>
+            <Setter Property="AlternatingRowBackground" Value="#F5F5F5"/>
+            <Setter Property="BorderBrush" Value="LightGray"/>
+            <Setter Property="GridLinesVisibility" Value="None"/>
+            <Setter Property="HeadersVisibility" Value="Column"/>
+            <Setter Property="AutoGenerateColumns" Value="False"/>
+            <Setter Property="CanUserAddRows" Value="False"/>
+            <Setter Property="ColumnHeaderStyle">
+                <Setter.Value>
+                    <Style TargetType="DataGridColumnHeader">
+                        <Setter Property="Background" Value="White"/>
+                        <Setter Property="Foreground" Value="Black"/>
+                        <Setter Property="BorderBrush" Value="LightGray"/>
+                        <Setter Property="BorderThickness" Value="0,0,0,1"/>
+                        <Setter Property="Padding" Value="5"/>
+                        <Setter Property="HorizontalContentAlignment" Value="Left"/>
+                    </Style>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="CellStyle">
+                <Setter.Value>
+                    <Style TargetType="DataGridCell">
+                        <Setter Property="Background" Value="Transparent"/>
+                        <Setter Property="BorderBrush" Value="LightGray"/>
+                        <Setter Property="BorderThickness" Value="0,0,0,1"/>
+                        <Setter Property="Foreground" Value="Black"/>
+                        <Setter Property="Padding" Value="5"/>
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="DataGridCell">
+                                    <Grid Background="{TemplateBinding Background}">
+                                        <ContentPresenter VerticalAlignment="Center"/>
+                                    </Grid>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="#FF252526"/>
+            <Setter Property="Foreground" Value="{StaticResource ForegroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="0,0,1,1"/>
+            <Setter Property="Padding" Value="5"/>
+        </Style>
+
+        <Style TargetType="DataGrid">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource ForegroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="RowBackground" Value="Transparent"/>
+            <Setter Property="AlternatingRowBackground" Value="#10FFFFFF"/>
+        </Style>
+
+        <Style TargetType="ListViewItem">
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Margin" Value="0,0,0,5"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListViewItem">
+                        <Border Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}"
+                        CornerRadius="3">
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                      VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#3FFFFFFF"/>
+                </Trigger>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="{StaticResource HighlightBrush}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Шаблон для вкладки с атрибутами -->
+        <DataTemplate x:Key="AttributesTemplate">
+            <ScrollViewer>
+                <ItemsControl ItemsSource="{Binding DataContext.CurrentCharacter.AttributesCollection, 
+                        RelativeSource={RelativeSource AncestorType=Page}}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <UniformGrid Columns="3"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Margin="5" Padding="5" Background="#252526" CornerRadius="5">
+                                <StackPanel>
+                                    <TextBlock Text="{Binding Name}" 
+                                   Foreground="{StaticResource ForegroundBrush}"
+                                   FontWeight="Bold"/>
+                                    <TextBox Text="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                 Style="{StaticResource FieldValueStyle}"
+                                 Margin="0,5,0,0"/>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </DataTemplate>
+
+        <!-- Шаблон для вкладки с навыками -->
+        <DataTemplate x:Key="SkillsTemplate">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                
+                <!-- Список навыков -->
+                <ScrollViewer Grid.Row="0">
+                    <ItemsControl ItemsSource="{Binding DataContext.CurrentCharacter.SkillsCollection, 
+                          RelativeSource={RelativeSource AncestorType=Page}}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Margin="5" Padding="5" Background="#252526" CornerRadius="5">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="80"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- Чекбокс владения навыком -->
+                                        <CheckBox IsChecked="{Binding IsProficient, Mode=TwoWay}" 
+                                          VerticalAlignment="Center"
+                                          ToolTip="Владеет навыком"
+                                          Margin="5,0"/>
+
+                                        <!-- Название навыка -->
+                                        <TextBlock Text="{Binding Name}" 
+                                           Grid.Column="1" 
+                                           VerticalAlignment="Center" 
+                                           Margin="5,0"
+                                           Foreground="{StaticResource ForegroundBrush}"/>
+
+                                        <!-- Значение навыка -->
+                                        <TextBox Text="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                         Grid.Column="2" 
+                                         VerticalAlignment="Center"
+                                         Style="{StaticResource MaterialDesignTextBox}"
+                                         Foreground="{StaticResource ForegroundBrush}"/>
+
+                                        <!-- Кнопка удаления -->
+                                        <Button Grid.Column="3" 
+                                        Command="{Binding DataContext.RemoveSkillCommand, 
+                                                RelativeSource={RelativeSource AncestorType=Page}}"
+                                        CommandParameter="{Binding}"
+                                        Style="{StaticResource MaterialDesignIconButton}"
+                                        Foreground="#FFF44336"
+                                        Content="✕"
+                                        ToolTip="Удалить навык"/>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+
+                <!-- Панель с кнопками управления -->
+                <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="5">
+                    <!-- Кнопка добавления нового навыка -->
+                    <Button Content="Добавить навык" 
+                    Command="{Binding DataContext.AddSkillCommand}"
+                    Margin="0,0,10,0"
+                    Style="{StaticResource MaterialDesignFlatButton}"
+                    Foreground="#FF4CAF50"/>
+
+                    <!-- Кнопка сброса к шаблону -->
+                    <Button Content="Сбросить к шаблону" 
+                    Command="{Binding DataContext.ResetSkillsCommand}"
+                    Style="{StaticResource MaterialDesignFlatButton}"
+                    ToolTip="Вернуть стандартные навыки из шаблона системы"/>
+                </StackPanel>
+            </Grid>
+        </DataTemplate>
+
+        <!-- Шаблон для вкладки с дополнительными полями -->
+        <DataTemplate x:Key="AdditionalFieldsTemplate">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <ItemsControl ItemsSource="{Binding AdditionalFields}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Margin="0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="150"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Text="{Binding Key}" 
+                                   VerticalAlignment="Center"
+                                   Style="{StaticResource MaterialDesignSubtitle1TextBlock}"/>
+
+                                <TextBox Text="{Binding Value, Mode=TwoWay}" 
+                                     Grid.Column="1" 
+                                     Margin="5,0"
+                                     Style="{StaticResource MaterialDesignTextBox}"/>
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </DataTemplate>
+
+        <!-- Шаблон для вкладки с инвентарем -->
+        <DataTemplate x:Key="InventoryTemplate">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <DataGrid ItemsSource="{Binding DataContext.CurrentCharacter.InventoryItems, 
+                      RelativeSource={RelativeSource AncestorType=Page}}"
+                      Style="{StaticResource InventoryDataGridStyle}"
+                      Margin="5"
+                      CanUserSortColumns="False">
+
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Название" Binding="{Binding Name}" Width="*"/>
+                        <DataGridTextColumn Header="Описание" Binding="{Binding Description}" Width="*"/>
+                        <DataGridTextColumn Header="Количество" Binding="{Binding Quantity}" Width="Auto"/>
+                        <DataGridCheckBoxColumn Header="Надето" Binding="{Binding IsEquipped}" Width="Auto"/>
+                        <DataGridTemplateColumn Width="Auto">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Button Content="✕" 
+                                Command="{Binding DataContext.RemoveInventoryItemCommand, 
+                                RelativeSource={RelativeSource AncestorType=Page}}" 
+                                CommandParameter="{Binding}"
+                                Style="{StaticResource MaterialDesignIconButton}"
+                                Foreground="#FFF44336"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+
+                <Button Content="Добавить предмет" 
+                    Command="{Binding DataContext.AddInventoryItemCommand, 
+                    RelativeSource={RelativeSource AncestorType=Page}}"
+                    Grid.Row="1"
+                    Margin="5"
+                    HorizontalAlignment="Right"
+                    Style="{StaticResource MaterialDesignFlatButton}"
+                    Foreground="#FF4CAF50"/>
+            </Grid>
+        </DataTemplate>
+
+        <local:TabContentTemplateSelector 
+            x:Key="TabContentTemplateSelector"
+            AttributesTemplate="{StaticResource AttributesTemplate}"
+            SkillsTemplate="{StaticResource SkillsTemplate}"
+            InventoryTemplate="{StaticResource InventoryTemplate}"
+            AdditionalFieldsTemplate="{StaticResource AdditionalFieldsTemplate}"
+            NotesTemplate="{StaticResource NotesTemplate}"/>
+
+        <!-- Шаблон для истории бросков -->
+        <DataTemplate x:Key="HistoryItemTemplate">
+            <Border Background="#FF252526" CornerRadius="5" Padding="10" Margin="0,5">
+                <StackPanel>
+                    <TextBlock Text="{Binding Description}" FontWeight="Bold"/>
+                    <TextBlock Text="{Binding CustomDescription, FallbackValue=''}" 
+                       Margin="0,5,0,0"
+                       Visibility="{Binding CustomDescription, Converter={StaticResource NullToVisibilityConverter}}"/>
+                    <TextBlock Text="{Binding Results, StringFormat='Результаты: {0}'}"/>
+                    <TextBlock Text="{Binding Total, StringFormat='Итого: {0}'}"/>
+                    <TextBlock Text="{Binding Timestamp, StringFormat='0:HH:mm:ss'}" Foreground="Gray"/>
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+
+        <!-- Шаблон для персонажей -->
+        <DataTemplate x:Key="CharacterItemTemplate">
+            <Border BorderBrush="#FF3E3E40" BorderThickness="1" CornerRadius="5" Margin="5" Padding="10">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" Orientation="Vertical">
+                        <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="14"/>
+                        <TextBlock Text="{Binding System}" FontStyle="Italic" Foreground="#FFA0A0A0"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button Content="Печать" 
+                        Command="{Binding DataContext.PrintCurrentCharacterCommand, 
+                                 RelativeSource={RelativeSource AncestorType=Page}}"
+                        CommandParameter="{Binding}"
+                        Margin="2" 
+                        MinWidth="80"
+                        ToolTip="Печать текущего персонажа"
+                        Style="{StaticResource MaterialDesignFlatButton}"/>
+
+                        <Button Content="Удалить" 
+                        Command="{Binding DataContext.DeleteCharacterCommand, 
+                                 RelativeSource={RelativeSource AncestorType=Page}}" 
+                        CommandParameter="{Binding}" 
+                        Margin="2" 
+                        MinWidth="80"
+                        ToolTip="Удалить персонажа"
+                        Style="{StaticResource MaterialDesignFlatButton}"
+                        Foreground="#FFF44336"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </DataTemplate>
+    </Page.Resources>
+
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Панель управления -->
+
+        <Border Grid.Row="0" Background="#FF252526" CornerRadius="5" Padding="10">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                <!-- Персонаж -->
+                <StackPanel Orientation="Vertical" Margin="5" VerticalAlignment="Center">
+                    <TextBlock Text="Персонаж" Foreground="#FFA0A0A0" FontStyle="Italic" Margin="0,0,0,2"/>
+                    <ComboBox ItemsSource="{Binding CharacterSheets}" 
+                              SelectedItem="{Binding SelectedCharacter, Mode=TwoWay}"
+                              DisplayMemberPath="Name"
+                              Width="150" 
+                              ToolTip="Выберите персонажа"/>
+                </StackPanel>
+
+                <!-- Тип кубика -->
+                <StackPanel Orientation="Vertical" Margin="5" VerticalAlignment="Center">
+                    <TextBlock Text="Тип" Foreground="#FFA0A0A0" FontStyle="Italic" Margin="0,0,0,2"/>
+                    <ComboBox ItemsSource="{Binding DiceTypes}" 
+                      SelectedItem="{Binding DiceType}" 
+                      Width="80"/>
+                </StackPanel>
+
+                <!-- Количество -->
+                <StackPanel Orientation="Vertical" Margin="5" VerticalAlignment="Center">
+                    <TextBlock Text="Кол-во" Foreground="#FFA0A0A0" FontStyle="Italic" Margin="0,0,0,2"/>
+                    <TextBox Text="{Binding DiceCount}" 
+                     Width="50"
+                     ToolTip="Количество кубиков"/>
+                </StackPanel>
+
+                <!-- Модификатор -->
+                <StackPanel Orientation="Vertical" Margin="5" VerticalAlignment="Center">
+                    <TextBlock Text="Модиф." Foreground="#FFA0A0A0" FontStyle="Italic" Margin="0,0,0,2"/>
+                    <TextBox Text="{Binding Modifier}" 
+                     Width="50" 
+                     ToolTip="Модификатор броска"/>
+                </StackPanel>
+
+                <!-- Кнопки -->
+                <StackPanel Orientation="Vertical" Margin="5" VerticalAlignment="Center">
+                    <TextBlock Text=" " Foreground="Transparent" Margin="0,0,0,2"/>
+
+                    <!-- Пустой элемент для выравнивания -->
+                    <Button Content="Бросить" 
+                    Command="{Binding RollDiceCommand}" 
+                    Width="100" 
+                    ToolTip="Сделать бросок"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Vertical" Margin="5" VerticalAlignment="Center">
+                    <TextBlock Text=" " Foreground="Transparent" Margin="0,0,0,2"/>
+
+                    <!-- Пустой элемент для выравнивания -->
+                    <Button Content="Очистить" 
+                    Command="{Binding ClearHistoryCommand}" 
+                    Width="100" 
+                    ToolTip="Очистить историю бросков"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- Основное содержимое -->
+        <TabControl Grid.Row="1" 
+                    Background="Transparent"
+                    ItemContainerStyle="{StaticResource SystemTabItemStyle}"
+                    Foreground="White">
+                    
+            <!-- Вкладка для броска кубиков (обновленная версия) -->
+            <TabItem Header="Броски кубиков">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Standard Dice Roll Section with animation triggers -->
+                    <GroupBox Grid.Row="0" Header="Стандартный бросок" Margin="5">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <StackPanel Orientation="Vertical" Margin="5" VerticalAlignment="Center">
+                                <TextBlock Text="Тип кубика" Foreground="#FFA0A0A0" FontStyle="Italic" Margin="0,0,0,2"/>
+                                <ComboBox ItemsSource="{Binding DiceTypes}" 
+                              SelectedItem="{Binding DiceType}" 
+                              Width="80"/>
+                            </StackPanel>
+
+                            <StackPanel Orientation="Vertical" Margin="5" VerticalAlignment="Center">
+                                <TextBlock Text="Количество" Foreground="#FFA0A0A0" FontStyle="Italic" Margin="0,0,0,2"/>
+                                <TextBox Text="{Binding DiceCount}" 
+                             Width="50"
+                             ToolTip="Количество кубиков"/>
+                            </StackPanel>
+
+                            <StackPanel Orientation="Vertical" Margin="5" VerticalAlignment="Center">
+                                <TextBlock Text="Модификатор" Foreground="#FFA0A0A0" FontStyle="Italic" Margin="0,0,0,2"/>
+                                <TextBox Text="{Binding Modifier}" 
+                                     Width="50" 
+                                     ToolTip="Модификатор броска"/>
+                            </StackPanel>
+
+                            <StackPanel Orientation="Vertical" Margin="5" VerticalAlignment="Center">
+                                <Button Content="Бросить" 
+                                    Command="{Binding RollDiceCommand}" 
+                                    Width="100">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource MaterialDesignFlatButton}">
+                                            <Setter Property="Effect">
+                                                <Setter.Value>
+                                                    <DropShadowEffect Color="#FF4CAF50" BlurRadius="10" Opacity="0"/>
+                                                </Setter.Value>
+                                            </Setter>
+                                            <Style.Triggers>
+                                                <EventTrigger RoutedEvent="Button.Click">
+                                                    <BeginStoryboard>
+                                                        <Storyboard>
+                                                            <DoubleAnimation Storyboard.TargetProperty="Effect.Opacity"
+                                                                 From="0" To="1" Duration="0:0:0.3"
+                                                                 AutoReverse="True" RepeatBehavior="2x"/>
+                                                        </Storyboard>
+                                                    </BeginStoryboard>
+                                                </EventTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+
+                            </StackPanel>
+                            <ToggleButton Content="Пользовательские броски" 
+                                          IsChecked="{Binding ShowCustomDice}"
+                                          Margin="0,0,10,0"
+                                          Style="{StaticResource MaterialDesignFlatMidBgButton}"/>
+                        </StackPanel>
+                    </GroupBox>
+
+                    <!-- Custom Dice Roll Section with improved interface -->
+                    <GroupBox Grid.Row="1" Header="Пользовательский бросок" Margin="5"
+                      Visibility="{Binding ShowCustomDice, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <StackPanel>
+                            <DataGrid ItemsSource="{Binding DiceSets}"
+                                      AutoGenerateColumns="False"
+                                      CanUserAddRows="False"
+                                      Margin="0,0,0,10">
+                                <DataGrid.Columns>
+                                    <DataGridComboBoxColumn Header="Тип кубика"
+                                                SelectedItemBinding="{Binding DiceType, UpdateSourceTrigger=PropertyChanged}"
+                                                Width="*">
+                                        <DataGridComboBoxColumn.ElementStyle>
+                                            <Style TargetType="ComboBox">
+                                                <Setter Property="ItemsSource" Value="{Binding DataContext.DiceTypes, 
+                                                    RelativeSource={RelativeSource AncestorType=DataGrid}}"/>
+                                            </Style>
+                                        </DataGridComboBoxColumn.ElementStyle>
+                                        <DataGridComboBoxColumn.EditingElementStyle>
+                                            <Style TargetType="ComboBox">
+                                                <Setter Property="ItemsSource" Value="{Binding DataContext.DiceTypes, 
+                                                    RelativeSource={RelativeSource AncestorType=DataGrid}}"/>
+                                            </Style>
+                                        </DataGridComboBoxColumn.EditingElementStyle>
+                                    </DataGridComboBoxColumn>
+                                    <DataGridTextColumn Header="Количество"
+                                   Binding="{Binding Count}"/>
+                                    <DataGridTemplateColumn>
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Button Content="✕" 
+                                            Command="{Binding DataContext.RemoveDiceSetCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                            CommandParameter="{Binding}"
+                                            Style="{StaticResource MaterialDesignIconButton}"
+                                            Foreground="#FFF44336"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+
+                            <!-- В разделе Custom Dice Roll Section -->
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                <Button Content="Добавить набор" 
+                                        Command="{Binding AddDiceSetCommand}"
+                                        Style="{StaticResource MaterialDesignFlatButton}"
+                                        Margin="0,0,5,0"/>
+
+                                <Button Content="Бросить все" 
+                                        Command="{Binding RollCustomDiceCommand}"
+                                        Style="{StaticResource MaterialDesignRaisedButton}"
+                                        Background="#FF4CAF50"
+                                        Foreground="White"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </GroupBox>
+
+                    <!-- Results Display with animations -->
+                    <Grid Grid.Row="2">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Current Roll Result -->
+                        <Border Grid.Row="0" Background="#FF252526" CornerRadius="5" Padding="10" Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock Text="{Binding SelectedRoll.Description}" FontWeight="Bold" FontSize="16"/>
+
+                                <TextBlock Text="{Binding SelectedRoll.Total, StringFormat='Общий результат: {0}'}" 
+                               FontSize="14" Margin="0,5,0,0"
+                               Visibility="{Binding SelectedRoll, Converter={StaticResource NullToVisibilityConverter}}"/>
+
+                                <!-- Results Visualization with advanced animation -->
+                                <ItemsControl ItemsSource="{Binding SelectedRoll.Results}" 
+                                              ItemTemplate="{StaticResource DiceTemplate}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel HorizontalAlignment="Center"/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                </ItemsControl>
+
+                                <TextBlock Text="{Binding SelectedRoll.CustomDescription}" 
+                               Margin="0,10,0,0"
+                               TextWrapping="Wrap"
+                               Visibility="{Binding SelectedRoll.CustomDescription, Converter={StaticResource NullToVisibilityConverter}}"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Roll History -->
+                        <ListView Grid.Row="1" 
+                                  ItemsSource="{Binding RollHistory}" 
+                                  SelectedItem="{Binding SelectedRoll}"
+                                  ItemTemplate="{StaticResource HistoryItemTemplate}"
+                                  Background="Transparent"
+                                  BorderThickness="0"/>
+                    </Grid>
+                </Grid>
+            </TabItem>
+
+            <!-- Вкладка персонажей -->
+            <TabItem Header="Персонажи">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Панель добавления персонажа -->
+                    <Border Grid.Row="0" Background="#FF252526" CornerRadius="5" Padding="10" Margin="0,0,0,10">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <ComboBox ItemsSource="{Binding GameSystems}" 
+                                  SelectedItem="{Binding SelectedSystem}" 
+                                  Width="120" Margin="10"/>
+                            <TextBox Text="{Binding CharacterName}" 
+                                 Width="200" Margin="10" 
+                                 ToolTip="Имя нового персонажа"/>
+                            <Button Content="Добавить" 
+                                Command="{Binding AddCharacterCommand}" 
+                                Width="100" Margin="10"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Список персонажей -->
+                    <ListView Grid.Row="1" 
+                          ItemsSource="{Binding CharacterSheets}" 
+                          ItemTemplate="{StaticResource CharacterItemTemplate}"
+                          Background="Transparent"
+                          BorderThickness="0"
+                          ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="ListViewItem">
+                                <Setter Property="Background" Value="Transparent"/>
+                                <Setter Property="BorderThickness" Value="0"/>
+                                <Setter Property="Padding" Value="0"/>
+                                <Setter Property="Margin" Value="0,0,0,5"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="ListViewItem">
+                                            <ContentPresenter/>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </ListView.ItemContainerStyle>
+                    </ListView>      
+                </Grid>
+            </TabItem>
+
+            <!-- Вкладка редактора персонажа -->
+            <TabItem Header="Редактор персонажа" IsSelected="{Binding IsEditing}">
+                <ScrollViewer>
+                    <Grid Margin="10">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <!-- Основная информация -->
+                        <GroupBox Grid.Row="0" Header="Основная информация" Margin="5" Style="{StaticResource MaterialDesignGroupBox}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Изображение персонажа -->
+                                <Border Grid.Column="0" Width="150" Height="200" Margin="5" 
+                                        CornerRadius="4" BorderBrush="#FF3E3E40" BorderThickness="1"
+                                        Background="#FF252526">
+                                    <Image Source="{Binding CurrentCharacter.ImagePath, Converter={StaticResource ImagePathConverter}}" 
+                                           Stretch="Uniform">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Source" Value="/Resources/default_character.jpg"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding CurrentCharacter.ImagePath}" Value="{x:Null}">
+                                                        <Setter Property="Source" Value="/Resources/default_character.jpg"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding CurrentCharacter.ImagePath}" Value="">
+                                                        <Setter Property="Source" Value="/Resources/default_character.jpg"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                </Border>
+
+                                <!-- Основные поля персонажа -->
+                                <StackPanel Grid.Column="1" Margin="5">
+                                    <Button Content="Загрузить изображение" 
+                                        Command="{Binding LoadImageCommand}" 
+                                        Margin="0,0,0,10"
+                                        Style="{StaticResource MaterialDesignFlatButton}"
+                                        Foreground="#FF4CAF50"/>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        <TextBlock Text="Игрок:" Grid.Row="5" Grid.Column="0" Margin="0,0,5,5" Foreground="White"/>
+                                        <TextBox Text="{Binding CurrentCharacter.PlayerName}" Grid.Row="5" Grid.Column="1" Margin="0,0,0,5"
+                                             Style="{StaticResource MaterialDesignTextBox}"/>
+                                        <TextBlock Text="Имя:" Grid.Row="0" Grid.Column="0" Margin="0,0,5,5" Foreground="White"/>
+                                        <TextBox Text="{Binding CurrentCharacter.Name}" Grid.Row="0" Grid.Column="1" Margin="0,0,0,5"
+                                         Style="{StaticResource MaterialDesignTextBox}"/>
+                                        <TextBlock Text="Система:" Grid.Row="1" Grid.Column="0" Margin="0,0,5,5" Foreground="White"/>
+                                        <ComboBox ItemsSource="{Binding GameSystems}" 
+                                          SelectedItem="{Binding CurrentCharacter.System}" 
+                                          Grid.Row="1" Grid.Column="1" Margin="0,0,0,5"
+                                          Style="{StaticResource MaterialDesignComboBox}"/>
+                                        <TextBlock Text="Раса:" Grid.Row="2" Grid.Column="0" Margin="0,0,5,5" Foreground="White"/>
+                                        <ComboBox ItemsSource="{Binding CurrentTemplate.Races}" 
+                                          SelectedItem="{Binding CurrentCharacter.Race}" 
+                                          Grid.Row="2" Grid.Column="1" Margin="0,0,0,5"
+                                          Style="{StaticResource MaterialDesignComboBox}"/>
+                                        <TextBlock Text="Класс:" Grid.Row="3" Grid.Column="0" Margin="0,0,5,5" Foreground="White"/>
+                                        <ComboBox ItemsSource="{Binding CurrentTemplate.Classes}" 
+                                          SelectedItem="{Binding CurrentCharacter.Class}" 
+                                          Grid.Row="3" Grid.Column="1" Margin="0,0,0,5"
+                                          Style="{StaticResource MaterialDesignComboBox}"/>
+                                        <TextBlock Text="Уровень:" Grid.Row="4" Grid.Column="0" Margin="0,0,5,5" Foreground="White"/>
+                                        <TextBox Text="{Binding CurrentCharacter.Level}" Grid.Row="4" Grid.Column="1" Margin="0,0,0,5"
+                                             Style="{StaticResource MaterialDesignTextBox}"/>
+                                        <TextBlock Text="Предыстория:" Grid.Row="6" Grid.Column="0" Margin="0,0,5,5" Foreground="White"/>
+                                        <TextBox Text="{Binding CurrentCharacter.Background}" Grid.Row="6" Grid.Column="1" Margin="0,0,0,5"
+                                             Style="{StaticResource MaterialDesignTextBox}"/>
+                                        <TextBlock Text="Опыт:" Grid.Row="7" Grid.Column="0" Margin="0,0,5,5" Foreground="White"/>
+                                        <TextBox Text="{Binding CurrentCharacter.ExperiencePoints}" Grid.Row="7" Grid.Column="1" Margin="0,0,0,5"
+                                             Style="{StaticResource MaterialDesignTextBox}"/>
+                                        <TextBlock Text="Мировоззрение:" Grid.Row="8" Grid.Column="0" Margin="0,0,5,5" Foreground="White"/>
+                                        <ComboBox ItemsSource="{Binding Alignments}" 
+                                          SelectedItem="{Binding CurrentCharacter.Alignment}" 
+                                          Grid.Row="8" Grid.Column="1" Margin="0,0,0,5"
+                                          Style="{StaticResource MaterialDesignComboBox}"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Grid>
+                        </GroupBox>
+                        <!-- Динамические вкладки шаблона -->
+                        <TabControl Grid.Row="1" 
+                                ItemsSource="{Binding CurrentTemplate.Tabs}" 
+                                ContentTemplateSelector="{StaticResource TabContentTemplateSelector}"
+                                Margin="5">
+                            <TabControl.ItemContainerStyle>
+                                <Style TargetType="TabItem" BasedOn="{StaticResource MaterialDesignTabItem}">
+                                    <Setter Property="Header" Value="{Binding Header}"/>
+                                    <Setter Property="Padding" Value="10,5"/>
+                                </Style>
+                            </TabControl.ItemContainerStyle>
+                        </TabControl>
+                        <!-- Кнопки управления -->
+                        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="5">
+
+                            <Button Content="Сохранить" 
+
+                                    Command="{Binding SaveCharacterCommand}" 
+
+                                    Width="120" 
+
+                                    Margin="5"
+
+                                    Style="{StaticResource MaterialDesignRaisedButton}"
+
+                                    Foreground="White"
+
+                                    Background="#FF4CAF50"/>
+                            <Button Content="Отмена" 
+                                    Command="{Binding CancelEditCommand}" 
+                                    Width="120" 
+                                    Margin="5"
+                                    Style="{StaticResource MaterialDesignRaisedButton}"
+                                    Foreground="White"
+                                    Background="#FFF44336"/>
+
+                        </StackPanel>
+                    </Grid>
+                </ScrollViewer>
+            </TabItem>
+        </TabControl>
+    </Grid>
+</Page>

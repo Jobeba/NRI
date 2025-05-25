@@ -1,13 +1,18 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Navigation;
 
-namespace NRI.Classes
+namespace NRI.Services
 {
+    public interface INavigationService
+    {
+        void NavigateToPage<T>() where T : Page;
+        void NavigateToWindow<T>() where T : Window;
+        void GoBack();
+    }
+
     public class NavigationService : INavigationService
     {
         private readonly IServiceProvider _serviceProvider;
@@ -17,12 +22,37 @@ namespace NRI.Classes
             _serviceProvider = serviceProvider;
         }
 
-        public void NavigateTo<TWindow>() where TWindow : Window
+        public void NavigateToPage<T>() where T : Page
         {
-            var window = _serviceProvider.GetRequiredService<TWindow>();
+            var page = _serviceProvider.GetRequiredService<T>();
+            if (Application.Current.MainWindow is MainWindow mainWindow)
+            {
+                mainWindow.MainFrame.Navigate(page);
+            }
+        }
+
+        public void NavigateToWindow<T>() where T : Window
+        {
+            var window = _serviceProvider.GetRequiredService<T>();
             window.Show();
-            Application.Current.MainWindow?.Close();
+
+            if (Application.Current.MainWindow is Window currentWindow &&
+                currentWindow != window &&
+                currentWindow is not Autorizatsaya)
+            {
+                currentWindow.Close();
+            }
+
             Application.Current.MainWindow = window;
+        }
+
+        public void GoBack()
+        {
+            if (Application.Current.MainWindow is MainWindow mainWindow &&
+                mainWindow.MainFrame.CanGoBack)
+            {
+                mainWindow.MainFrame.GoBack();
+            }
         }
     }
 }

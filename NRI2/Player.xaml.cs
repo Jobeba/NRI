@@ -25,9 +25,7 @@ namespace NRI
         }
         private void Role_Click(object sender, RoutedEventArgs e)
         {
-            DiceRoller Roll = new DiceRoller();
-            Roll.Show();
-            this.Close();
+
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)

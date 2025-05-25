@@ -6,6 +6,12 @@ public class AppDbContext : DbContext
 {
     private readonly IConfiguration _configuration;
 
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        var connectionString = _configuration.GetConnectionString("DefaultConnection");
+        optionsBuilder.UseSqlServer(connectionString);
+    }
+
     // Конструктор для использования Dependency Injection
     public AppDbContext(DbContextOptions<AppDbContext> options)
         : base(options)
@@ -13,26 +19,23 @@ public class AppDbContext : DbContext
     }
 }
 
-namespace NRI.Models
+public class EventContext : DbContext
 {
-    public class EventContext : DbContext
+    private readonly IConfiguration _configuration;
+
+    public EventContext(DbContextOptions<EventContext> options, IConfiguration configuration) : base(options)
     {
-        public DbSet<Events> Events { get; set; }
+        _configuration = configuration;
+    }
 
-        public EventContext(DbContextOptions<EventContext> options)
-          : base(options)
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        if (!optionsBuilder.IsConfigured)
         {
-        }
-
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        {
-            optionsBuilder.UseSqlServer("DefaultConnection");
-        }
-
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
-        {
-            modelBuilder.Entity<Events>()
-                .HasKey(e => e.EventID);
+            var connectionString = _configuration.GetConnectionString("DefaultConnection");
+            optionsBuilder.UseSqlServer(connectionString);
         }
     }
+
+    public DbSet<Events> Events { get; set; }
 }

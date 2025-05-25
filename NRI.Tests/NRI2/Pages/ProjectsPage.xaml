@@ -1,0 +1,98 @@
+﻿<Page x:Class="NRI.Pages.ProjectsPage"
+      Title="Мероприятия"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes" xmlns:converters="clr-namespace:NRI.Converters"
+      mc:Ignorable="d">
+    
+    <Page.Resources>
+        <converters:BooleanToVisibilityConverter x:Key="BoolToVisibility"/>
+        <converters:IntToVisibilityConverter x:Key="IntToVisibility"/>
+    </Page.Resources>
+    
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Шапка страницы -->
+        <Border Grid.Row="0" Background="#00677E" CornerRadius="0,0,5,5">
+            <TextBlock Text="МЕРОПРИЯТИЯ" 
+                      Style="{StaticResource Monocraft_Medium}"
+                      FontSize="25" Foreground="White" 
+                      HorizontalAlignment="Center" Padding="10"/>
+        </Border>
+
+        <!-- Основное содержимое -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="200"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Боковая панель с кнопками -->
+            <StackPanel Grid.Column="0" Background="#483C32">
+                <Button Content="СОХРАНИТЬ" Click="Save_Click"
+                        Style="{StaticResource CustomFont}"/>
+                <Button Content="УДАЛИТЬ" Click="Delete_Click"
+                        Style="{StaticResource CustomFont}"/>
+                <Button x:Name="NotificationsButton" 
+                            Click="ShowNotifications_Click"
+                            Style="{StaticResource CustomFont}"
+                            Visibility="{Binding IsPlayer, Converter={StaticResource BoolToVisibility}}">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <TextBlock Text="УВЕДОМЛЕНИЯ" VerticalAlignment="Center"/>
+                        <Border x:Name="NotificationBadge" Background="Red" CornerRadius="10" 
+                Padding="3" Margin="5,0,0,0" Visibility="Collapsed">
+                            <TextBlock x:Name="BadgeCount" Text="{Binding UnreadCount}" 
+                       Foreground="White" FontSize="12" FontWeight="Bold"/>
+                        </Border>
+                    </StackPanel>
+                </Button>
+                <Button Content="← Назад" 
+                    Click="BackButton_Click"
+                    Style="{StaticResource CustomFont}"/>
+                <Button Content="ВЫХОД" Click="Showdown_click"
+                        Style="{StaticResource CustomFont}"/>
+
+            </StackPanel>
+
+            <!-- Таблица мероприятий -->
+            <DataGrid x:Name="eventsDataGrid" Grid.Column="1" Margin="5"
+                     AutoGenerateColumns="False" CanUserAddRows="False">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="ID" Binding="{Binding EventID}" Width="Auto"/>
+                    <DataGridTextColumn Header="Название" Binding="{Binding EventName}" Width="*"/>
+                    <DataGridTextColumn Header="Описание" Binding="{Binding Description}" Width="*"/>
+                    <DataGridTextColumn Header="Дата" Binding="{Binding EventDate, StringFormat={}{0:dd.MM.yyyy}}" Width="Auto"/>
+                    <DataGridTextColumn Header="Макс. участников" Binding="{Binding MaxParticipants}" Width="Auto"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+
+        <!-- Контейнер для Toast-уведомлений -->
+        <ItemsControl x:Name="ToastContainer" 
+                     HorizontalAlignment="Right" 
+                     VerticalAlignment="Bottom"
+                     Margin="10">
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <Border Background="#333" CornerRadius="5" Padding="10" Margin="0,5"
+                           BorderBrush="#0078D7" BorderThickness="1">
+                        <StackPanel>
+                            <TextBlock Text="{Binding Title}" 
+                                      FontWeight="Bold" 
+                                      Foreground="White"/>
+                            <TextBlock Text="{Binding Message}" 
+                                      Foreground="White"
+                                      TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+    </Grid>
+</Page>

@@ -1,0 +1,80 @@
+﻿<!-- EventsPage.xaml - Общая страница мероприятий -->
+<Page x:Class="NRI.Pages.EventsPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:local="clr-namespace:NRI.Pages"
+      xmlns:vm="clr-namespace:NRI.ViewModels"
+      
+      DataContext="{Binding EventsViewModel, Source={StaticResource Locator}}">
+
+    <Grid>
+        <TabControl>
+            <!-- Вкладка для всех мероприятий -->
+            <TabItem Header="Предстоящие мероприятия">
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="5">
+                        <Button Content="Обновить" Command="{Binding LoadEventsCommand}" Margin="5"/>
+                        <Button Content="Создать мероприятие" Command="{Binding CreateEventCommand}" 
+                                Visibility="{Binding CurrentUser.IsOrganizer, Converter={StaticResource BoolToVisibility}}" Margin="5"/>
+                    </StackPanel>
+                    <ListView ItemsSource="{Binding UpcomingEvents}" SelectedItem="{Binding SelectedEvent}">
+                        <ListView.View>
+                            <GridView>
+                                <GridViewColumn Header="Название" DisplayMemberBinding="{Binding EventName}" Width="200"/>
+                                <GridViewColumn Header="Дата" DisplayMemberBinding="{Binding EventDate, StringFormat={}{0:dd.MM.yyyy HH:mm}}" Width="120"/>
+                                <GridViewColumn Header="Организатор" DisplayMemberBinding="{Binding Organizer.FullName}" Width="150"/>
+                                <GridViewColumn Header="Участников" DisplayMemberBinding="{Binding Participants.Count}" Width="80"/>
+                            </GridView>
+                        </ListView.View>
+                    </ListView>
+                </DockPanel>
+            </TabItem>
+
+            <!-- Вкладка для моих мероприятий -->
+            <TabItem Header="Мои мероприятия">
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="5">
+                        <Button Content="Присоединиться" Command="{Binding JoinEventCommand}" 
+                                Visibility="{Binding SelectedEvent.CanJoin, Converter={StaticResource BoolToVisibility}}" Margin="5"/>
+                        <Button Content="Покинуть" Command="{Binding LeaveEventCommand}" 
+                                Visibility="{Binding SelectedEvent.IsParticipant, Converter={StaticResource BoolToVisibility}}" Margin="5"/>
+                        <Button Content="Участники" Command="{Binding ShowParticipantsCommand}" Margin="5"/>
+                    </StackPanel>
+                    <ListView ItemsSource="{Binding MyEvents}" SelectedItem="{Binding SelectedEvent}">
+                        <ListView.View>
+                            <GridView>
+                                <GridViewColumn Header="Название" DisplayMemberBinding="{Binding EventName}" Width="200"/>
+                                <GridViewColumn Header="Дата" DisplayMemberBinding="{Binding EventDate, StringFormat={}{0:dd.MM.yyyy HH:mm}}" Width="120"/>
+                                <GridViewColumn Header="Статус" Width="100">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding StatusText}"/>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                            </GridView>
+                        </ListView.View>
+                    </ListView>
+                </DockPanel>
+            </TabItem>
+        </TabControl>
+
+        <!-- Панель участников -->
+        <Popup x:Name="ParticipantsPopup" Placement="Center" StaysOpen="False">
+            <Border Background="White" BorderBrush="Black" BorderThickness="1" Padding="10">
+                <StackPanel>
+                    <TextBlock Text="Участники мероприятия" FontWeight="Bold" Margin="0,0,0,10"/>
+                    <ListView ItemsSource="{Binding EventParticipants}" Height="300" Width="400">
+                        <ListView.View>
+                            <GridView>
+                                <GridViewColumn Header="Игрок" DisplayMemberBinding="{Binding User.FullName}" Width="150"/>
+                                <GridViewColumn Header="Персонаж" DisplayMemberBinding="{Binding Character.Name}" Width="150"/>
+                            </GridView>
+                        </ListView.View>
+                    </ListView>
+
+                </StackPanel>
+            </Border>
+        </Popup>
+    </Grid>
+</Page>

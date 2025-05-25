@@ -69,9 +69,7 @@ namespace NRI
 
         private void DiceRoller_Click(object sender, RoutedEventArgs e)
         {
-            DiceRoller dice = new DiceRoller();
-            dice.Show();
-            this.Close();
+
         }
 
         private void Save_Click(object sender, RoutedEventArgs e)
@@ -86,9 +84,7 @@ namespace NRI
 
         private void Exist_click(object sender, RoutedEventArgs e)
         {
-            Registrasya settings = new Registrasya();
-            settings.Show();
-            this.Close();
+
         }
         protected override void OnClosed(EventArgs e)
         {

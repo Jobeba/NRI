@@ -38,9 +38,7 @@ namespace NRI
 
         private void Exist_click(object sender, RoutedEventArgs e)
         {
-            Registrasya exist = new Registrasya();
-            exist.Show();
-            this.Close();
+
         }
         private void Delete_Click(object sender, RoutedEventArgs e)
         {

@@ -3,72 +3,121 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NRI.Classes;
-using NRI.ViewModel;
-using NRI;
 using System;
 using System.IO;
 using System.Windows;
+using NRI.Models;
+using NRI.Classes.Email;
+using NRI.Pages;
+using NRI.Controls;
+using NRI.DiceRoll;
+using NRI.ViewModels;
+using NRI.Data;
+using NRI.Services;
+using NRI.Windows;
 
 namespace NRI
 {
     public partial class App : Application
     {
         public static IServiceProvider ServiceProvider { get; private set; }
+        public static IConfiguration Configuration { get; private set; }
 
         protected override void OnStartup(StartupEventArgs e)
         {
-            base.OnStartup(e);
-
-            // Конфигурация приложения
-            var configuration = new ConfigurationBuilder()
-                .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-                .Build();
-
-            string connectionString = configuration.GetConnectionString("DefaultConnection");
-            if (string.IsNullOrEmpty(connectionString))
+            try
             {
-                throw new InvalidOperationException("Строка подключения не найдена в конфигурации.");
+                var builder = new ConfigurationBuilder()
+                    .SetBasePath(Directory.GetCurrentDirectory())
+                    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+
+                Configuration = builder.Build();
+
+                var services = new ServiceCollection();
+                ConfigureServices(services);
+                ServiceProvider = services.BuildServiceProvider();
+
+                InitializeDatabase();
+
+                // Всегда показываем окно авторизации, MainWindow откроется сам при успешной аутентификации
+                var authWindow = ServiceProvider.GetRequiredService<Autorizatsaya>();
+                authWindow.Show();
             }
-
-            // Настройка DI-контейнера
-            var serviceCollection = new ServiceCollection();
-            ConfigureServices(serviceCollection, configuration);
-
-            ServiceProvider = serviceCollection.BuildServiceProvider();
-
-            // Показываем окно Авторизации первым
-            var registrationWindow = ServiceProvider.GetRequiredService<Autorizatsaya>();
-            registrationWindow.Show();
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Критическая ошибка при запуске: {ex.Message}");
+                Shutdown();
+            }
         }
-        private void ConfigureServices(IServiceCollection services, IConfiguration configuration)
+
+        private void InitializeDatabase()
+        {
+            using (var scope = ServiceProvider.CreateScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                dbContext.Database.Migrate(); 
+            }
+        }
+
+        private void ConfigureServices(IServiceCollection services)
         {
             // Регистрация конфигурации
-            services.AddSingleton(configuration);
+            services.Configure<DatabaseSettings>(Configuration.GetSection("ConnectionStrings"));
 
             // Регистрация базы данных
-            services.AddTransient<IDatabaseService, DatabaseService>(provider =>
-                new DatabaseService(configuration.GetConnectionString("DefaultConnection")));
-
-            // Регистрация репозиториев
-            services.AddTransient<IUserRepository, UserRepository>();
+            services.AddTransient<IDatabaseService>(provider =>
+                  new DatabaseService(
+                      provider.GetRequiredService<IConfigService>(),
+                      provider.GetRequiredService<ILogger<DatabaseService>>()
+                  ));
 
             // Регистрация сервисов
-            services.AddTransient<IAuthService, AuthService>();
-            services.AddTransient<INavigationService, NavigationService>();
+            services.AddSingleton<IConfiguration>(Configuration);
+            services.AddSingleton<IEmailTemplateService, EmailTemplateService>();
+            services.AddSingleton<ILogger<Autorizatsaya>>(provider =>
+                        provider.GetRequiredService<ILoggerFactory>().CreateLogger<Autorizatsaya>());
+            services.AddSingleton<ILogger<MainWindow>>(provider =>
+                    provider.GetRequiredService<ILoggerFactory>().CreateLogger<MainWindow>());
+            services.AddSingleton<IConfigService, ConfigService>();
+            services.AddTransient<IUserRepository>(provider =>
+                  new UserRepository(
+                      provider.GetRequiredService<IDatabaseService>(),
+                      provider.GetRequiredService<IConfigService>(),
+                      provider.GetRequiredService<ILogger<UserRepository>>()
+                  ));
+            services.AddSingleton<JwtService>();
+            var jwtSecret = Configuration["Jwt:Secret"];
+            if (string.IsNullOrEmpty(jwtSecret))
+            {
+                            // Генерируем новый секрет только для разработки
+            #if DEBUG
+                            jwtSecret = JwtService.GenerateJwtSecret();
+                            Console.WriteLine($"Сгенерирован JWT Secret: {jwtSecret}");
+            #else
+                    throw new Exception("JWT Secret не настроен в конфигурации");
+            #endif
+            }
 
-            // Регистрация контекста БД (Transient для EF Core)
+            services.AddTransient<IAuthService, AuthService>();
+            services.AddTransient<INavigationService, INavigationService>();
+            services.AddTransient<IUserRepository, UserRepository>();
+            services.AddTransient<INotificationService, NotificationService>();
+            services.AddTransient<JwtService>();
+
+            // Регистрация контекста БД
+
             services.AddDbContext<AppDbContext>(options =>
-                options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")),
-                ServiceLifetime.Transient);
-            services.AddDbContext<EventContext>(options =>
-                options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")),
-                ServiceLifetime.Transient);
+                options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection"),
+                sqlServerOptions => sqlServerOptions.MigrationsAssembly("NRI")));
 
             // Регистрация ViewModels
-            services.AddTransient<EventsViewModel>();
             services.AddTransient<MainWindowViewModel>();
             services.AddTransient<DiceRollerViewModel>();
+
+            // Регистрация Controls
+            services.AddTransient<AdminWindowControl>();
+            services.AddTransient<OrganizerWindowControl>();
+            services.AddTransient<PlayerWindowControl>();
 
             // Регистрация окон
             services.AddTransient<Autorizatsaya>();
@@ -77,21 +126,62 @@ namespace NRI
             services.AddTransient<staff>();
             services.AddTransient<Reviews>();
             services.AddTransient<Settings>();
-            services.AddTransient<DiceRoller>();
-            services.AddTransient<Events>();
+            services.AddTransient<PDFPreviewWindow>();
+            services.AddTransient<PlayerPage>();
 
+            // Регистрация страниц
+            services.AddTransient<ProjectsPage>();
+            services.AddTransient<AdminPage>();
+            services.AddTransient<OrganizerPage>();
+            services.AddTransient<ReviewsPage>();
+            services.AddTransient<StaffPage>();
+            services.AddTransient<SettingsPage>();
+            services.AddTransient<DiceRollerPage>(provider =>
+                            new DiceRollerPage(
+                                provider.GetRequiredService<IAuthService>(),
+                                provider.GetRequiredService<JwtService>()
+                            ));
 
-            services.AddLogging(configure => configure.AddConsole());
+            services.AddTransient<IEmailTemplateService, EmailTemplateService>();
+            services.AddTransient<IEmailSenderService, EmailSenderService>();
+            services.AddTransient<IDatabaseService, DatabaseService>();
+            // Email сервисы
+            services.AddScoped<IEmailSenderService, EmailSenderService>();
+            services.AddScoped<INavigationService, INavigationService>();
+            services.AddScoped<IUserRepository, UserRepository>();
+            services.AddSingleton<ILogger<MainWindow>>(provider =>
+                       provider.GetRequiredService<ILoggerFactory>().CreateLogger<MainWindow>());
+
+            services.AddSingleton<INavigationService, NavigationService>();
+            services.AddScoped<EventsService>();
+
+            services.Configure<EmailSettings>(Configuration.GetSection("EmailSettings:Default"));
+
             // Настройка логирования
-            services.AddLogging(loggingBuilder =>
-            {
-                loggingBuilder.AddConsole();
-                loggingBuilder.AddDebug();
-            });
+            services.AddLogging(configure => configure
+                .AddConsole()
+                .AddDebug()
+                .SetMinimumLevel(LogLevel.Debug));
         }
+
         private void Application_Startup(object sender, StartupEventArgs e)
         {
+            // Дополнительная логика запуска при необходимости
+        }
+        public void SwitchToMainWindow()
+        {
+            var mainWindow = ServiceProvider.GetRequiredService<MainWindow>();
+            mainWindow.Show();
+            Current.MainWindow?.Close();
+            Current.MainWindow = mainWindow;
+        }
 
+        public void SwitchToAuthWindow()
+        {
+            var authWindow = ServiceProvider.GetRequiredService<Autorizatsaya>();
+            authWindow.Show();
+            Current.MainWindow?.Close();
+            Current.MainWindow = authWindow;
         }
     }
 }

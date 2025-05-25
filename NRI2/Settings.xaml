@@ -38,7 +38,7 @@
             <Button Style="{StaticResource CustomFont}" Margin="0,30,0,0" FontSize="16"  Foreground="#0A0A0A" Content="Завершить работу" Click="Showdown_click" Cursor="Hand" BorderBrush="#002800" Background="#00A86B"/>
         </StackPanel>
 
-        <Image gif:ImageBehavior.AnimatedSource="image\Intellect_dice.gif"
+        <Image gif:ImageBehavior.AnimatedSource="Gifs\Intellect_dice.gif"
             gif:ImageBehavior.RepeatBehavior="1"
             gif:ImageBehavior.AnimateInDesignMode="False"
             gif:ImageBehavior.AutoStart="True"              

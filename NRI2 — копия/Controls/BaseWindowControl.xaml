@@ -1,0 +1,18 @@
+﻿<UserControl x:Class="NRI.Controls.BaseWindowControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition x:Name="MenuColumn" Width="Auto"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <ContentControl x:Name="SideMenuContentHost" 
+                       Content="{Binding SideMenuContent, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                       Grid.Column="0"/>
+
+        <ContentControl x:Name="MainContentHost" 
+                       Content="{Binding MainContent, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                       Grid.Column="1"/>
+    </Grid>
+</UserControl>

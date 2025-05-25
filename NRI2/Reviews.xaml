@@ -30,7 +30,7 @@
                     <TranslateTransform X="0"/>
                 </TransformGroup>
             </Label.RenderTransform>
-            <Image gif:ImageBehavior.AnimatedSource="/image/Intellect_dice.gif"
+            <Image gif:ImageBehavior.AnimatedSource="/Gifs/Intellect_dice.gif"
                 gif:ImageBehavior.RepeatBehavior="1"
                 gif:ImageBehavior.AnimateInDesignMode="False"
                 gif:ImageBehavior.AutoStart="True"              

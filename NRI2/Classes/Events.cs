@@ -6,7 +6,7 @@ namespace NRI.Models
     public class Events
     {
         [Key] // Указываем, что это первичный ключ
-        public int EventID { get; set; }
+        public int EventID;
 
         [Required]
         [MaxLength(255)]

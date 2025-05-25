@@ -1,0 +1,569 @@
+﻿<Window x:Class="NRI.Autorizatsaya"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:gif="http://wpfanimatedgif.codeplex.com"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        xmlns:media="clr-namespace:System.Windows.Media;assembly=PresentationCore"
+        xmlns:mediaAnim="clr-namespace:System.Windows.Media.Animation;assembly=PresentationCore"
+        mc:Ignorable="d"
+        Title="Авторизация"
+        WindowState="Maximized"
+        WindowStyle="None"
+        ResizeMode="NoResize"
+        AllowsTransparency="True"
+        Background="Transparent"
+        MouseLeftButtonDown="Window_MouseDown">
+
+    <Window.Resources>
+        <Style TargetType="Button" x:Key="WindowControlButton">
+            <Setter Property="Width" Value="36"/>
+            <Setter Property="Height" Value="36"/>
+            <Setter Property="Margin" Value="4,0,0,0"/>
+            <Setter Property="Foreground" Value="{DynamicResource MaterialDesignBody}"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid>
+                            <Ellipse x:Name="circle" 
+                                     Fill="{TemplateBinding Background}" 
+                                     Stroke="{TemplateBinding Foreground}" 
+                                     StrokeThickness="1"/>
+                            <ContentPresenter HorizontalAlignment="Center" 
+                                              VerticalAlignment="Center"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="circle" Property="Fill" Value="#22000000"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="circle" Property="Fill" Value="#44000000"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <!-- Современный стиль для рамки -->
+        <Style TargetType="Border" x:Key="ModernWindowBorder">
+            <Setter Property="BorderBrush">
+                <Setter.Value>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                        <GradientStop Color="#FF4b6cb7" Offset="0"/>
+                        <GradientStop Color="#FF182848" Offset="1"/>
+                    </LinearGradientBrush>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Background" Value="#1E1E1E"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect BlurRadius="20" 
+                                    ShadowDepth="5" 
+                                    Direction="-90"
+                                    Color="Black" 
+                                    Opacity="0.5"/>
+                </Setter.Value>
+            </Setter>
+        </Style>
+                <!-- Стиль для области захвата границы -->
+        <Style TargetType="Border" x:Key="ResizeGripBorder">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Cursor" Value="SizeNWSE"/>
+        </Style>
+        <Storyboard x:Key="WindowModeEnterAnimation">
+            <DoubleAnimation Storyboard.TargetName="ContentScale" 
+                             Storyboard.TargetProperty="ScaleX"
+                             From="1" To="0.9" Duration="0:0:0.3"
+                             DecelerationRatio="0.7"/>
+            <DoubleAnimation Storyboard.TargetName="ContentScale" 
+                             Storyboard.TargetProperty="ScaleY"
+                             From="1" To="0.9" Duration="0:0:0.3"
+                             DecelerationRatio="0.7"/>
+            <ThicknessAnimation Storyboard.TargetName="MainBorder"
+                               Storyboard.TargetProperty="Margin"
+                               From="0" To="20" Duration="0:0:0.3"/>
+        </Storyboard>
+
+        <Storyboard x:Key="FullscreenEnterAnimation">
+            <DoubleAnimation Storyboard.TargetName="ContentScale" 
+                             Storyboard.TargetProperty="ScaleX"
+                             From="0.9" To="1" Duration="0:0:0.3"
+                             AccelerationRatio="0.7"/>
+            <DoubleAnimation Storyboard.TargetName="ContentScale" 
+                             Storyboard.TargetProperty="ScaleY"
+                             From="0.9" To="1" Duration="0:0:0.3"
+                             AccelerationRatio="0.7"/>
+            <ThicknessAnimation Storyboard.TargetName="MainBorder"
+                               Storyboard.TargetProperty="Margin"
+                               From="20" To="0" Duration="0:0:0.3"/>
+        </Storyboard>
+    </Window.Resources>
+    <Grid x:Name="MainGrid">
+        <Grid.RenderTransform>
+            <ScaleTransform x:Name="ScaleTransform" CenterX="0.5" CenterY="0.5"/>
+        </Grid.RenderTransform>
+        <Grid>
+            <Grid.RenderTransform>
+                <TransformGroup>
+                    <ScaleTransform x:Name="ContentScale" CenterX="0.5" CenterY="0.5"/>
+                </TransformGroup>
+            </Grid.RenderTransform>
+
+            <!-- Фон с эффектом размытия -->
+            <Grid x:Name="BackgroundGrid">
+                <Image x:Name="BackgroundImage" Stretch="UniformToFill">
+                    <Image.RenderTransform>
+                        <ScaleTransform x:Name="BackgroundScale" ScaleX="1.05" ScaleY="1.05"/>
+                    </Image.RenderTransform>
+                    <Image.Effect>
+                        <BlurEffect x:Name="BackgroundBlur" Radius="4"/>
+                    </Image.Effect>
+                </Image>
+            </Grid>
+            <!-- Основное содержимое с анимированной границей -->
+            <Border x:Name="MainBorder" 
+                BorderBrush="{DynamicResource MaterialDesignDivider}" 
+                BorderThickness="1" 
+                CornerRadius="4"
+                Background="#1E1E1E"
+                Margin="0"
+                VerticalAlignment="Center"
+                HorizontalAlignment="Center">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="20" 
+                                 ShadowDepth="5" 
+                                 Color="Black" 
+                                 Opacity="0.6"/>
+                </Border.Effect>
+
+                <!-- Внутренняя рамка с эффектом свечения -->
+                <Border BorderBrush="#604b6cb7" 
+                   BorderThickness="1" 
+                   CornerRadius="6"
+                   Margin="1">
+
+                    <!-- Градиентное свечение по краям -->
+                    <Border BorderBrush="#104b6cb7" 
+                       BorderThickness="4" 
+                       CornerRadius="4">
+
+                        <!-- Основное содержимое -->
+                        <Grid x:Name="ContentGrid">
+
+                            <Grid>
+                                <!-- Панель управления окном -->
+                                <Grid VerticalAlignment="Top" HorizontalAlignment="Right" Panel.ZIndex="999">
+                                    <StackPanel Orientation="Horizontal" Margin="0,10,10,0">
+                                        <Button x:Name="ToggleFullscreenButton" 
+                                            Style="{StaticResource WindowControlButton}"
+                                            Click="ToggleFullscreen_Click"
+                                            ToolTip="Переключить режим">
+                                            <materialDesign:PackIcon x:Name="ToggleIcon" 
+                                                   Kind="WindowRestore" 
+                                                   Width="18" 
+                                                   Height="18"/>
+                                        </Button>
+
+                                        <Button Style="{StaticResource WindowControlButton}"
+                                Click="CloseButton_Click"
+                                ToolTip="Закрыть">
+                                            <materialDesign:PackIcon Kind="Close" Width="18" Height="18"/>
+                                        </Button>
+                                    </StackPanel>
+                                </Grid>
+
+                                <materialDesign:DialogHost x:Name="RootDialogHost" 
+                             Identifier="RootDialog"
+                             CloseOnClickAway="True">
+
+                                    <!-- Основной контент -->
+                                    <materialDesign:Card Padding="20"
+                            VerticalAlignment="Center"
+                            HorizontalAlignment="Center"
+                            Width="486"
+                            Background="{DynamicResource MaterialDesignPaper}"
+                            Foreground="{DynamicResource MaterialDesignBody}" 
+                            Height="Auto">
+                                        <StackPanel>
+                                            <!-- Snackbar для уведомлений -->
+                                            <materialDesign:Snackbar x:Name="Snackbar"
+                                       HorizontalAlignment="Stretch"
+                                       VerticalAlignment="Bottom"
+                                       Margin="0,0,0,20"
+                                       Panel.ZIndex="999"
+                                       Background="{DynamicResource PrimaryHueMidBrush}"
+                                       Foreground="{DynamicResource PrimaryHueMidForegroundBrush}">
+                                                <materialDesign:Snackbar.MessageQueue>
+                                                    <materialDesign:MessageQueue />
+                                                </materialDesign:Snackbar.MessageQueue>
+                                            </materialDesign:Snackbar>
+
+                                            <!-- Панель авторизации -->
+                                            <StackPanel x:Name="AuthPanel">
+                                                <TextBlock Text="Вход в систему"
+                              FontFamily="{StaticResource CyberFonts}"
+                              Style="{StaticResource MaterialDesignHeadline5TextBlock}"
+                              HorizontalAlignment="Center"
+                              Margin="0 0 0 20"/>
+
+                                                <TextBox x:Name="LoginBox"
+                            FontFamily="{StaticResource CyberFonts}"
+                            materialDesign:HintAssist.Hint="Логин"
+                            Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                            Margin="0 0 0 15"/>
+
+                                                <PasswordBox x:Name="Passbox"
+                                FontFamily="{StaticResource CyberFonts}"
+                                materialDesign:HintAssist.Hint="Пароль"
+                                Style="{StaticResource MaterialDesignFloatingHintPasswordBox}"
+                                Margin="0 0 0 20"/>
+
+                                                <StackPanel x:Name="TwoFactorPanel"
+                               Visibility="Collapsed">
+                                                    <TextBox x:Name="TwoFactorCodeBox"
+                                materialDesign:HintAssist.Hint="Код двухфакторной аутентификации"
+                                Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                                Margin="0 0 0 15"/>
+                                                    <TextBlock Text="Используйте Google Authenticator"
+                                  Style="{StaticResource MaterialDesignCaptionTextBlock}"
+                                  HorizontalAlignment="Center"/>
+                                                    <Button Content="Подтвердить"
+                                Command="{Binding VerifyTwoFactorCommand}"
+                                Style="{StaticResource MaterialDesignRaisedButton}"
+                                Margin="0,10,0,0"/>
+                                                </StackPanel>
+
+                                                <Button Content="Войти"
+                                                   FontFamily="{StaticResource CyberFonts}"
+                                                   Command="{Binding LoginCommand}"
+                                                   Style="{StaticResource MaterialDesignRaisedButton}"
+                                                   Margin="0 20 0 10"/>
+
+                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0 10 0 0">
+                                                    <TextBlock FontFamily="{StaticResource CyberFonts}">
+                                                                <Hyperlink x:Name="ChangePasswordLink" 
+                                                                           Click="ChangePasswordLink_Click"
+                                                                           Style="{StaticResource MaterialDesignBody2Hyperlink}">
+                                                                    Сменить пароль
+                                                            </Hyperlink>
+                                                        </TextBlock>
+                                                        <TextBlock Text=" | " FontFamily="{StaticResource CyberFonts}"/>
+                                                    <TextBlock x:Name="RegistrationLinkContainer" FontFamily="{StaticResource CyberFonts}">
+                                <Hyperlink x:Name="GoToRegistrationLink" 
+                                      Click="GoToRegistrationLink_Click"
+                                      Style="{StaticResource MaterialDesignBody2Hyperlink}">
+                                    Регистрация
+                                </Hyperlink>
+                                                    </TextBlock>
+                                                </StackPanel>
+                                            </StackPanel>
+
+                                            <!-- Панель подтверждения (стилизованная под вход в систему) -->
+                                            <Grid x:Name="PasswordConfirmPanel" Visibility="Collapsed">
+                                                <!-- Затемнение фона (полупрозрачный черный) -->
+                                                <Border Background="#99000000"/>
+                                                <TextBlock Text="Подтверждение email"
+
+                                                   Style="{StaticResource MaterialDesignHeadline5TextBlock}"
+                                                   HorizontalAlignment="Center"
+                                                   Margin="0 0 0 20"/>
+
+                                                <TextBlock Text="Введите код подтверждения из email"
+                                                   Style="{StaticResource MaterialDesignBody1TextBlock}"
+                                                   HorizontalAlignment="Center"
+                                                   Margin="0 0 0 10"/>
+
+                                                <!-- Основная карточка -->
+                                                <materialDesign:Card Padding="20"
+                                                VerticalAlignment="Center"
+                                                HorizontalAlignment="Center"
+                                                Width="486"
+                                                Background="{DynamicResource MaterialDesignPaper}"
+                                                Foreground="{DynamicResource MaterialDesignBody}"
+                                                UniformCornerRadius="4">
+                                                    <StackPanel>
+                                                        <!-- Заголовок -->
+                                                        <TextBlock Text="Подтверждение аккаунта"
+                                                          FontFamily="{StaticResource CyberFonts}"
+                                                          Style="{StaticResource MaterialDesignHeadline5TextBlock}"
+                                                          HorizontalAlignment="Center"
+                                                          Margin="0 0 0 20"/>
+
+                                                        <!-- Описание -->
+                                                        <TextBlock Text="Введите секретный ключ из письма"
+                                              Style="{StaticResource MaterialDesignBody1TextBlock}"
+                                              HorizontalAlignment="Center"
+                                              Margin="0 0 0 10"/>
+
+                                                        <!-- Поле для ключа -->
+                                                        <TextBox x:Name="SecretKeyBox"
+                    FontFamily="{StaticResource CyberFonts}"
+                    materialDesign:HintAssist.Hint="Секретный ключ"
+                    Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                    Margin="0 20 0 20"/>
+
+                                                        <!-- Кнопки -->
+                                                        <StackPanel Orientation="Horizontal" 
+                       HorizontalAlignment="Center"
+                       Margin="0 20 0 10">
+                                                            <Button Content="Назад"
+                       FontFamily="{StaticResource CyberFonts}"
+                       Style="{StaticResource MaterialDesignFlatButton}"
+                       Click="BackButton_Click"
+                       Margin="0 0 20 0"/>
+
+                                                            <Button Content="Подтвердить"
+                       FontFamily="{StaticResource CyberFonts}"
+                       Command="{Binding ConfirmPasswordCommand}"
+                       Style="{StaticResource MaterialDesignRaisedButton}"/>
+                                                        </StackPanel>
+
+                                                        <!-- Ссылка на повторную отправку -->
+                                                        <TextBlock HorizontalAlignment="Center" 
+                                      Margin="0 15 0 0"
+                                      FontFamily="{StaticResource CyberFonts}">
+                                                                <Hyperlink x:Name="ResendCodeLink"
+                                                                           Click="ResendConfirmationCode_Click"
+                                                                           Style="{StaticResource MaterialDesignBody2Hyperlink}">
+                                                                    Отправить код повторно
+                                                                </Hyperlink>
+                                                        </TextBlock>
+                                                    </StackPanel>
+                                                </materialDesign:Card>
+                                            </Grid>
+
+
+
+                                            <!-- Панель регистрации -->
+                                            <StackPanel x:Name="RegistrationPanel" Visibility="Collapsed">
+                                                <TextBlock Text="Регистрация"
+                              FontFamily="{StaticResource CyberFonts}"
+                              Style="{StaticResource MaterialDesignHeadline5TextBlock}"
+                              HorizontalAlignment="Center"
+                              Margin="0 0 0 20"/>
+
+                                                <TextBox x:Name="RegFullName"
+                             FontFamily="{StaticResource CyberFonts}"
+                             materialDesign:HintAssist.Hint="ФИО"
+                             Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                             Margin="0 0 0 15"/>
+
+                                                <TextBox x:Name="RegEmail"
+                             FontFamily="{StaticResource CyberFonts}"
+                             materialDesign:HintAssist.Hint="Email"
+                             Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                             Margin="0 0 0 15"/>
+
+                                                <TextBox x:Name="RegPhone"
+                             FontFamily="{StaticResource CyberFonts}"
+                             materialDesign:HintAssist.Hint="Телефон"
+                             Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                             MaxLength="11"
+                             Margin="0 0 0 15"/>
+
+                                                <TextBox x:Name="RegLogin"
+                             FontFamily="{StaticResource CyberFonts}"
+                             materialDesign:HintAssist.Hint="Логин"
+                             Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                             Margin="0 0 0 15"/>
+
+                                                <!-- Поле пароля с кнопкой переключения видимости -->
+                                                <Grid Margin="0 0 0 15">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+
+                                                    <Grid>
+                                                        <PasswordBox x:Name="RegPassword" 
+                                                         FontFamily="{StaticResource CyberFonts}"
+                                                         materialDesign:HintAssist.Hint="Пароль"
+                                                         Style="{StaticResource MaterialDesignFloatingHintPasswordBox}"
+                                                         PasswordChanged="RegPassword_PasswordChanged"/>
+
+                                                        <TextBox x:Name="RegPasswordVisible"
+                                                         FontFamily="{StaticResource CyberFonts}"
+                                                         materialDesign:HintAssist.Hint="Пароль (видимый)"
+                                                         Padding="0,30,0,0"
+                                                         Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                                                         Visibility="Collapsed"
+                                                         TextChanged="RegPasswordVisible_TextChanged"/>
+                                                    </Grid>
+
+                                                    <Button x:Name="TogglePasswordButton"
+                                                    Grid.Column="1"
+                                                    Style="{StaticResource MaterialDesignIconButton}"
+                                                    Margin="5,0,0,0"
+                                                    VerticalAlignment="Center"
+                                                    Click="TogglePasswordVisibility_Click">
+                                                        <materialDesign:PackIcon 
+                                    x:Name="EyeIcon"
+                                    Kind="Eye" 
+                                    Width="24"
+                                    Height="24"/>
+                                                    </Button>
+                                                </Grid>
+
+                                                <PasswordBox x:Name="RegConfirmPassword"
+                                                FontFamily="{StaticResource CyberFonts}"
+                                                materialDesign:HintAssist.Hint="Подтвердите пароль"
+                                                Style="{StaticResource MaterialDesignFloatingHintPasswordBox}"
+                                                Margin="0 0 0 20"/>
+
+                                                <!-- Индикатор сложности пароля -->
+                                                <StackPanel Margin="0 0 0 15">
+                                                    <ProgressBar x:Name="PasswordStrengthBar"
+                                                        Minimum="0"
+                                                        Maximum="100"
+                                                        Height="8"
+                                                        Margin="0,5,0,0"
+                                                        Style="{StaticResource MaterialDesignLinearProgressBar}">
+                                                        <ProgressBar.Triggers>
+                                                            <EventTrigger RoutedEvent="Loaded">
+                                                                <BeginStoryboard>
+                                                                    <Storyboard>
+                                                                        <DoubleAnimation
+                                                    Storyboard.TargetProperty="Value"
+                                                    Duration="0:0:0.5"
+                                                    DecelerationRatio="0.5"/>
+                                                                    </Storyboard>
+                                                                </BeginStoryboard>
+                                                            </EventTrigger>
+                                                        </ProgressBar.Triggers>
+                                                    </ProgressBar>
+
+                                                    <TextBlock x:Name="PasswordStrengthText"
+                                                FontSize="12"
+                                                HorizontalAlignment="Right"
+                                                VerticalAlignment="Center"
+                                                Margin="0,0,5,0"/>
+                                                </StackPanel>
+
+                                                <!-- Требования к паролю -->
+                                                <StackPanel Margin="10,5,0,0">
+                                                    <TextBlock Text="Требования к паролю:" 
+                                                   FontSize="12"
+                                                   FontWeight="SemiBold"
+                                                   Margin="0,0,0,3"/>
+                                                    <CheckBox x:Name="LengthCheck" Content="Минимум 8 символов" IsEnabled="False" Style="{StaticResource MaterialDesignCheckBox}"/>
+                                                    <CheckBox x:Name="DigitCheck" Content="Содержит цифры" IsEnabled="False" Style="{StaticResource MaterialDesignCheckBox}"/>
+                                                    <CheckBox x:Name="LowerCheck" Content="Содержит строчные буквы" IsEnabled="False" Style="{StaticResource MaterialDesignCheckBox}"/>
+                                                    <CheckBox x:Name="UpperCheck" Content="Содержит заглавные буквы" IsEnabled="False" Style="{StaticResource MaterialDesignCheckBox}"/>
+                                                    <CheckBox x:Name="SpecialCheck" Content="Содержит спецсимволы" IsEnabled="False" Style="{StaticResource MaterialDesignCheckBox}"/>
+                                                </StackPanel>
+
+                                                <Button x:Name="RegisterButton"
+                                                Content="Зарегистрироваться"
+                                                FontFamily="{StaticResource CyberFonts}"
+                                                Click="RegisterButton_Click"
+                                                Style="{StaticResource MaterialDesignRaisedButton}"
+                                                Margin="0 20 0 10"/>
+
+                                                <Button Content="Назад"
+                                                    FontFamily="{StaticResource CyberFonts}"
+                                                    Style="{StaticResource MaterialDesignFlatButton}"
+                                                    HorizontalAlignment="Center"
+                                                    Click="BackButton_Click"/>
+
+                                                <!-- Области для изменения размера -->
+                                                <Border Style="{StaticResource ResizeGripBorder}" 
+                                                   VerticalAlignment="Top" 
+                                                   Height="4" />
+                                                <Border Style="{StaticResource ResizeGripBorder}" 
+                                               VerticalAlignment="Bottom" 
+                                               Height="4" />
+                                                <Border Style="{StaticResource ResizeGripBorder}" 
+                                                   HorizontalAlignment="Left" 
+                                                   Width="4" />
+                                                <Border Style="{StaticResource ResizeGripBorder}" 
+                                               HorizontalAlignment="Right" 
+                                               Width="4" />
+
+                                                <!-- Углы -->
+                                                <Border Style="{StaticResource ResizeGripBorder}" 
+                                               HorizontalAlignment="Left" 
+                                               VerticalAlignment="Top"
+                                               Width="8" Height="8" />
+                                                <Border Style="{StaticResource ResizeGripBorder}" 
+                                               HorizontalAlignment="Right" 
+                                               VerticalAlignment="Top"
+                                               Width="8" Height="8"  />
+                                                <Border Style="{StaticResource ResizeGripBorder}" 
+                                               HorizontalAlignment="Left" 
+                                               VerticalAlignment="Bottom"
+                                               Width="8" Height="8"/>
+                                                <Border Style="{StaticResource ResizeGripBorder}" 
+                                               HorizontalAlignment="Right" 
+                                               VerticalAlignment="Bottom"
+                                               Width="8" Height="8"/>
+                                            </StackPanel>
+                                            
+                                            <StackPanel x:Name="ChangePasswordPanel" Visibility="Collapsed">
+                                                <TextBlock Text="Смена пароля"
+                                                       FontFamily="{StaticResource CyberFonts}"
+                                                       Style="{StaticResource MaterialDesignHeadline5TextBlock}"
+                                                       HorizontalAlignment="Center"
+                                                       Margin="0 0 0 20"/>
+
+                                                <TextBox x:Name="ChangePasswordLoginBox"
+                                                      FontFamily="{StaticResource CyberFonts}"
+                                                      materialDesign:HintAssist.Hint="Логин"
+                                                      Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                                                      Margin="0 0 0 15"/>
+
+                                                <PasswordBox x:Name="OldPasswordBox"
+                                                     FontFamily="{StaticResource CyberFonts}"
+                                                     materialDesign:HintAssist.Hint="Старый пароль"
+                                                     Style="{StaticResource MaterialDesignFloatingHintPasswordBox}"
+                                                     Margin="0 0 0 15"/>
+
+                                                <PasswordBox x:Name="NewPasswordBox"
+                                                     FontFamily="{StaticResource CyberFonts}"
+                                                     materialDesign:HintAssist.Hint="Новый пароль"
+                                                     Style="{StaticResource MaterialDesignFloatingHintPasswordBox}"
+                                                     Margin="0 0 0 15"/>
+
+                                                <PasswordBox x:Name="ConfirmNewPasswordBox"
+                                                     FontFamily="{StaticResource CyberFonts}"
+                                                     materialDesign:HintAssist.Hint="Подтвердите новый пароль"
+                                                     Style="{StaticResource MaterialDesignFloatingHintPasswordBox}"
+                                                     Margin="0 0 0 20"/>
+
+                                                <TextBox x:Name="TwoFactorCodeChangePasswordBox"
+                                                         FontFamily="{StaticResource CyberFonts}"
+                                                         materialDesign:HintAssist.Hint="{Binding 
+                                                             RelativeSource={RelativeSource Self}, 
+                                                             Path=Visibility, 
+                                                             Converter={StaticResource MathAddConverter},
+                                                             ConverterParameter='Код из Google Authenticator|Код подтверждения из email'}"
+                                                         Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                                                         Margin="0 0 0 15"
+                                                         Visibility="Collapsed"/>
+                                                
+                                                <Button Content="Сменить пароль"
+                                                    FontFamily="{StaticResource CyberFonts}"
+                                                    Command="{Binding ChangePasswordCommand}"
+                                                    Style="{StaticResource MaterialDesignRaisedButton}"
+                                                    Margin="0 20 0 10"/>
+
+                                                <Button Content="Назад"
+                                                    FontFamily="{StaticResource CyberFonts}"
+                                                    Style="{StaticResource MaterialDesignFlatButton}"
+                                                    Click="BackToAuth_Click"/>
+                                            </StackPanel>
+                                        </StackPanel>
+
+                                    </materialDesign:Card>
+                                </materialDesign:DialogHost>
+                            </Grid>
+                        </Grid>
+                    </Border>
+                </Border>
+            </Border>
+        </Grid>
+    </Grid>
+</Window>

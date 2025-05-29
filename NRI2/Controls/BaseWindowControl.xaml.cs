@@ -9,8 +9,9 @@ using GalaSoft.MvvmLight.Views;
 
 namespace NRI.Controls
 {
-    public partial class BaseWindowControl : UserControl
+    public partial class BaseWindowControl : UserControl, IRoleNavigation
     {
+
         public static readonly DependencyProperty SideMenuContentProperty =
             DependencyProperty.Register(
                 "SideMenuContent",
@@ -60,6 +61,7 @@ namespace NRI.Controls
             }
         }
 
+
         public virtual void NavigateToHome()
         {
             try
@@ -79,23 +81,23 @@ namespace NRI.Controls
                 MessageBox.Show("Ошибка навигации", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-        public virtual void NavigateToCharacters()
+
+        public virtual void NavigateToDiceRoller()
         {
             try
             {
-                var navigationService = ServiceProvider.GetRequiredService<INavigationService>();
-                var diceRollerPage = ServiceProvider.GetRequiredService<DiceRollerPage>();
-
                 if (Application.Current.MainWindow is MainWindow mainWindow)
                 {
+                    var diceRollerPage = ServiceProvider.GetRequiredService<DiceRollerPage>();
                     mainWindow.MainFrame.Navigate(diceRollerPage);
                 }
             }
             catch (Exception ex)
             {
                 var logger = ServiceProvider.GetRequiredService<ILogger<BaseWindowControl>>();
-                logger.LogError(ex, "Ошибка навигации");
-                MessageBox.Show("Ошибка навигации", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                logger.LogError(ex, "Ошибка навигации к DiceRoller");
+                MessageBox.Show("Ошибка открытия бросков кубиков", "Ошибка",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
     }

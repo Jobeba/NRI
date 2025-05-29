@@ -156,6 +156,10 @@ namespace NRI.Migrations
                         .HasColumnName("Email")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<bool>("EmailConfirmed")
+                        .HasColumnName("email_confirmed")
+                        .HasColumnType("bit");
+
                     b.Property<string>("FullName")
                         .HasColumnName("Full_name")
                         .HasColumnType("nvarchar(max)");
@@ -175,6 +179,10 @@ namespace NRI.Migrations
                     b.Property<bool>("IsPasswordConfirmationRequired")
                         .HasColumnName("password_confirm")
                         .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LastActivity")
+                        .HasColumnName("LastActivity")
+                        .HasColumnType("datetime2");
 
                     b.Property<DateTime?>("LastLoginDate")
                         .HasColumnName("Date_auto")
@@ -200,6 +208,9 @@ namespace NRI.Migrations
                         .HasColumnName("Number_telephone")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Status")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("TwoFactorSecret")
                         .HasColumnName("TwoFactorSecret")
                         .HasColumnType("nvarchar(max)");
@@ -212,14 +223,36 @@ namespace NRI.Migrations
                         new
                         {
                             Id = 1,
+                            EmailConfirmed = false,
                             FullName = "Администратор",
                             IncorrectAttempts = 0,
                             IsAccountConfirmed = false,
                             IsBlocked = false,
                             IsPasswordConfirmationRequired = false,
                             Login = "admin",
-                            PasswordHash = "$2a$11$NEeBhaNQFpqLWwKGREVhf.bBvSrvzMB/l3iF0YpYyzcJlWjxdnqh."
+                            PasswordHash = "$2a$11$f2wnWY/Sa2WiOaAtsXNSa.RyE9H5Lqrn2HuMC4KPn94z.wG6ehHd2"
                         });
+                });
+
+            modelBuilder.Entity("NRI.Classes.User+GameSystem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<string>("Name")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Status")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Version")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("GameSystems");
                 });
 
             modelBuilder.Entity("NRI.DB.AuditLog", b =>
@@ -347,6 +380,7 @@ namespace NRI.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Status")
+                        .HasColumnName("Status")
                         .HasColumnType("nvarchar(50)")
                         .HasMaxLength(50);
 

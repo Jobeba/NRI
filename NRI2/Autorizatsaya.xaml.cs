@@ -35,7 +35,7 @@ using NRI.DB;
 
 namespace NRI
 {
-    public partial class Autorizatsaya : Window, INotifyPropertyChanged
+    public partial class Autorizatsaya : Window, INotifyPropertyChanged, IDisposable
     {
         private readonly ILogger<TwoFactorSetupDialog> _twoFactorLogger;
         private readonly IServiceProvider _serviceProvider;
@@ -82,7 +82,12 @@ namespace NRI
         private readonly IAuthService _authService;
         private readonly INavigationService _navigationService;
         private readonly ILogger<Autorizatsaya> _logger;
-
+        public void Dispose()
+        {
+            CleanupAnimations();
+            ImageBehavior.SetAnimatedSource(BackgroundImage, null);
+            BackgroundImage.Source = null;
+        }
         public ICommand LoginCommand { get; }
         public ICommand ChangePasswordCommand { get; }
         public ICommand VerifyTwoFactorCommand { get; }
@@ -211,6 +216,7 @@ namespace NRI
             _serviceProvider = serviceProvider;
             _twoFactorLogger = twoFactorLogger;
         }
+
         private void ChangePasswordLink_Click(object sender, RoutedEventArgs e)
         {
             SwitchToPanel(ChangePasswordPanel);
@@ -258,9 +264,9 @@ namespace NRI
         {
             try
             {
-                var uri = new Uri("pack://application:,,,/Gifs/Background2.gif");
+                var uri = new Uri("pack://application:,,,/Gifs/camp.gif");
                 var image = new BitmapImage(uri);
-              // Используем библиотеку WpfAnimatedGif
+
                 ImageBehavior.SetAnimatedSource(BackgroundImage, image);
                 ImageBehavior.SetRepeatBehavior(BackgroundImage, new RepeatBehavior(0)); 
                 // Бесконечное повторение
@@ -272,7 +278,12 @@ namespace NRI
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ошибка загрузки фонового изображения");
-                BackgroundImage.Source = new BitmapImage(new Uri("pack://application:,,,/Images/fallback-background.jpg"));
+                var bitmap = new BitmapImage();
+                bitmap.BeginInit();
+                bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                bitmap.UriSource = new Uri("pack://application:...");
+                bitmap.EndInit();
+                BackgroundImage.Source = bitmap;
             }
         }
         private async Task LoginAsync()
@@ -775,18 +786,10 @@ namespace NRI
                 // Сохраняем данные
                 Application.Current.Properties["JwtToken"] = token;
 
-                var currentUser = new User
-                {
-                    Id = userId,
-                    Login = username,
-                    Email = email,
-                    Token = token,
-                    Roles = roles,
-                    Role = DetermineHighestRole(roles)
-                };
-                Application.Current.Properties["CurrentUser"] = currentUser;
+                // Освобождаем ресурсы текущего окна перед созданием нового
+                CleanupResources();
 
-                // Создаем главное окно
+                // Создаем главное окно через ServiceProvider
                 var mainWindow = _serviceProvider.GetRequiredService<MainWindow>();
                 if (mainWindow.DataContext is MainWindowViewModel vm)
                 {
@@ -1177,6 +1180,7 @@ namespace NRI
                 _isWindowTransitionInProgress = false;
             }
         }
+
      public class AnimationManager
         {
             private readonly TimeSpan _duration;
@@ -1216,25 +1220,6 @@ namespace NRI
                     _isAnimating = false;
                 }
             }
-            public DoubleAnimation CreateDoubleAnimation(double toValue)
-            {
-                return new DoubleAnimation(toValue, _duration)
-                {
-                    EasingFunction = _easingFunction,
-                    FillBehavior = FillBehavior.HoldEnd
-                };
-            }
-            public ThicknessAnimation CreateThicknessAnimation(Thickness toValue)
-            {
-                return new ThicknessAnimation(toValue, _duration)
-                {
-                    EasingFunction = _easingFunction,
-                    FillBehavior = FillBehavior.HoldEnd
-
-                };
-
-            }
-
         }
 
         private void Window_MouseDown(object sender, MouseButtonEventArgs e)
@@ -1403,5 +1388,51 @@ namespace NRI
             TwoFactorCodeChangePasswordBox.Text = "";
             SwitchToPanel(AuthPanel);
         }
+
+        protected override void OnClosed(EventArgs e)
+        {
+            base.OnClosed(e);
+            // Освобождаем ресурсы анимации
+            ImageBehavior.SetAnimatedSource(BackgroundImage, null);
+            BackgroundImage.Source = null;
+
+            // Освобождаем другие ресурсы
+            _backgroundBlur = null;
+            _backgroundScale = null;
+            _contentScale = null;
+            CleanupResources();
+        }
+
+        private void CleanupResources()
+        {
+            // Останавливаем анимации GIF
+            ImageBehavior.SetAnimatedSource(BackgroundImage, null);
+
+            // Очищаем подписки на события
+
+            // Освобождаем графические ресурсы
+            BackgroundImage.Source = null;
+
+            // Принудительный сбор мусора
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+        }
+
+        private void CleanupAnimations()
+        {
+            // Очистка анимаций
+            BeginAnimation(OpacityProperty, null);
+            RenderTransform = null;
+            Effect = null;
+
+            // Для всех дочерних элементов
+            foreach (var child in LogicalTreeHelper.GetChildren(this).OfType<FrameworkElement>())
+            {
+                child.BeginAnimation(OpacityProperty, null);
+                child.RenderTransform = null;
+                child.Effect = null;
+            }
+        }
+
     }
 }

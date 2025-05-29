@@ -24,6 +24,7 @@ using WpfAnimatedGif;
 using System.Security.Claims;
 using NRI.Data;
 using Microsoft.EntityFrameworkCore;
+using System.Net.Http;
 
 namespace NRI
 {
@@ -49,7 +50,8 @@ namespace NRI
             IServiceProvider serviceProvider,
             ILogger<MainWindow> logger,
             INavigationService navigationService,
-            JwtService jwtService)
+            JwtService jwtService,
+            UserActivityService activityService)
 
         {
             InitializeComponent();
@@ -112,6 +114,7 @@ namespace NRI
 
             DataContext = _serviceProvider.GetRequiredService<MainWindowViewModel>();
 
+            activityService.StartTracking();
 
             _logger.LogInformation("Главное меню запустилось");
 
@@ -162,6 +165,25 @@ namespace NRI
                 _logger.LogError(ex, "Ошибка при загрузке главного окна");
                 ShowAuthWindow();
             }
+        }
+
+        private void CleanupResources()
+        {
+            // Останавливаем анимации
+            ImageBehavior.SetAnimatedSource(BackgroundImage, null);
+
+            // Очищаем подписки
+            Loaded -= MainWindow_Loaded;
+
+            // Освобождаем графические ресурсы
+            BackgroundImage.Source = null;
+
+            // Очищаем DataContext
+            DataContext = null;
+
+            // Принудительный сбор мусора
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
         }
 
         private void ToggleMenuForCurrentContent()
@@ -228,6 +250,7 @@ namespace NRI
 
             await Task.Delay(_animationDuration);
         }
+
         public void SetUserRoles(List<string> roles)
         {
             if (DataContext is MainWindowViewModel vm)
@@ -319,7 +342,6 @@ namespace NRI
 
             try
             {
-                // Убеждаемся, что трансформации инициализированы
                 if (_contentScale == null || _backgroundScale == null || _backgroundBlur == null)
                 {
                     InitializeTransforms();
@@ -342,6 +364,7 @@ namespace NRI
                 _isWindowTransitionInProgress = false;
             }
         }
+
         private void InitializeTransforms()
         {
             try
@@ -409,37 +432,46 @@ namespace NRI
             BeginAnimation(OpacityProperty, closingAnimation);
         }
 
-        private void Staff_Click(object sender, RoutedEventArgs e)
+        private void InitializeBackground()
         {
-            _logger.LogInformation("Открытие окна сотрудников");
-            MainFrame.Navigate(new StaffPage());
-        }
+            try
+            {
+                // Для анимированного GIF используем ImageBehavior
+                var image = new BitmapImage(new Uri("pack://application:,,,/Gifs/background.gif"));
+                ImageBehavior.SetAnimatedSource(BackgroundImage, image);
+                ImageBehavior.SetRepeatBehavior(BackgroundImage, RepeatBehavior.Forever);
 
-        private void Reviews_Click(object sender, RoutedEventArgs e)
-        {
-            _logger.LogInformation("Открытие окна отзывов");
-            MainFrame.Navigate(new ReviewsPage());
-        }
-
-        private void Setting_Click(object sender, RoutedEventArgs e)
-        {
-            _logger.LogInformation("Открытие окна сеттингов");
-            MainFrame.Navigate(new SettingsPage());
+                // Настройка эффектов
+                BackgroundImage.Stretch = Stretch.UniformToFill;
+                _backgroundBlur.Radius = 4;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Ошибка загрузки фонового изображения");
+                // Запасной вариант
+                BackgroundImage.Source = new BitmapImage(new Uri("pack://application:,,,/Images/fallback-background.jpg"));
+            }
         }
 
         private void DiceRoller_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                _logger.LogInformation("Открытие окна бросков");
-                var diceRollerPage = _serviceProvider.GetRequiredService<DiceRollerPage>();
-                MainFrame.Navigate(diceRollerPage);
+                if (MainFrame.Content is BaseWindowControl currentControl)
+                {
+                    currentControl.NavigateToDiceRoller();
+                }
+                else
+                {
+                    var diceRollerPage = _serviceProvider.GetRequiredService<DiceRollerPage>();
+                    MainFrame.Navigate(diceRollerPage);
+                }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Ошибка при открытии страницы бросков");
-                MessageBox.Show("Ошибка при открытии страницы бросков", "Ошибка",
-                              MessageBoxButton.OK, MessageBoxImage.Error);
+                _logger.LogError(ex, "Ошибка навигации к DiceRoller");
+                MessageBox.Show("Ошибка открытия бросков кубиков", "Ошибка",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -448,22 +480,16 @@ namespace NRI
             base.OnClosed(e);
             ImageBehavior.SetAnimatedSource(BackgroundImage, null);
         }
+
         private void CloseApp(object sender, RoutedEventArgs e) => Application.Current.Shutdown();
         private void NavigateToHome(object sender, RoutedEventArgs e)
         {
-            if (MainFrame.Content is BaseWindowControl currentControl)
+            if (MainFrame.Content is IRoleNavigation navigator)
             {
-                currentControl.NavigateToHome();
+                navigator.NavigateToHome();
             }
         }
 
-        private void NavigateToCharacters(object sender, RoutedEventArgs e)
-        {
-            if (MainFrame.Content is BaseWindowControl currentControl)
-            {
-                currentControl.NavigateToCharacters();
-            }
-        }
         private void MinimizeWindow(object sender, RoutedEventArgs e) =>
                     WindowState = WindowState.Minimized;
 

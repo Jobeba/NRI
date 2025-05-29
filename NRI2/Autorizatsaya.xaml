@@ -162,12 +162,11 @@
                                             Style="{StaticResource WindowControlButton}"
                                             Click="ToggleFullscreen_Click"
                                             ToolTip="Переключить режим">
-                                            <materialDesign:PackIcon x:Name="ToggleIcon" 
-                                                   Kind="WindowRestore" 
-                                                   Width="18" 
-                                                   Height="18"/>
+                                                                                <materialDesign:PackIcon x:Name="ToggleIcon" 
+                                               Kind="WindowRestore" 
+                                               Width="18" 
+                                               Height="18"/>
                                         </Button>
-
                                         <Button Style="{StaticResource WindowControlButton}"
                                 Click="CloseButton_Click"
                                 ToolTip="Закрыть">

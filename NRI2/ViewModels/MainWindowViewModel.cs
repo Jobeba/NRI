@@ -1,5 +1,6 @@
 ﻿using NRI.Classes;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -103,6 +104,74 @@ namespace NRI.ViewModels
 
 
         public event PropertyChangedEventHandler PropertyChanged;
+        private string _selectedDiceType;
+        public string SelectedDiceType
+        {
+            get => _selectedDiceType;
+            set
+            {
+                if (_selectedDiceType != value)
+                {
+                    _selectedDiceType = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+        private CharacterSheet _selectedCharacter;
+        public CharacterSheet SelectedCharacter
+        {
+            get => _selectedCharacter;
+            set
+            {
+                if (_selectedCharacter != value)
+                {
+                    _selectedCharacter = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(SelectedCharacter.System)); // Для обновления привязок к System
+                }
+            }
+        }
+        private ObservableCollection<DiceRolling> _recentRolls;
+        public ObservableCollection<DiceRolling> RecentRolls
+        {
+            get => _recentRolls ?? (_recentRolls = new ObservableCollection<DiceRolling>());
+            set
+            {
+                if (_recentRolls != value)
+                {
+                    _recentRolls = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        private int _diceModifier;
+        public int DiceModifier
+        {
+            get => _diceModifier;
+            set
+            {
+                if (_diceModifier != value)
+                {
+                    _diceModifier = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        private int _diceCount = 1;
+        public int DiceCount
+        {
+            get => _diceCount;
+            set
+            {
+                if (_diceCount != value)
+                {
+                    _diceCount = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
 
         protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {

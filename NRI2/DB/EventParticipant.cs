@@ -13,6 +13,8 @@ namespace NRI.DB
         public int EventID { get; set; }
         public int UserID { get; set; }
         public DateTime RegistrationDate { get; set; }
+
+        [Column("Status")]
         public string Status { get; set; }
 
         [ForeignKey("EventID")] 

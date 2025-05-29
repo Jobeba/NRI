@@ -1,15 +1,24 @@
 ﻿using NRI.DB;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
     namespace NRI.Classes
     {
         [Table("Users")]
-        public partial class User
+        public class User : INotifyPropertyChanged
         {
+            public event PropertyChangedEventHandler PropertyChanged;
+
+            protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
+            {
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            }
+
             [Key]
             [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
             [Column("UserID")]
@@ -19,6 +28,30 @@ using System.Linq;
             [Column("login")] // Изменено на имя столбца в БД
             [MaxLength(50)]
             public string Login { get; set; }
+            public string Status { get; set; }
+
+            private bool _isOnline;
+
+            [NotMapped]
+            public bool IsOnline => LastActivity.HasValue &&
+                          (DateTime.UtcNow - LastActivity.Value) <= TimeSpan.FromMinutes(5);
+
+            public void UpdateActivity()
+            {
+                LastActivity = DateTime.UtcNow;
+                OnPropertyChanged(nameof(IsOnline));
+            }
+
+            public static class TimeInterval
+            {
+                public static TimeSpan OnlineThreshold = TimeSpan.FromMinutes(5);
+            }
+
+            [NotMapped]
+            public DateTime RegistrationDate { get; set; }
+
+            [Column("LastActivity")]
+            public DateTime? LastActivity { get; set; }
 
             [Required]
             [Column("password")] // Изменено на имя столбца в БД
@@ -48,6 +81,9 @@ using System.Linq;
 
             [Column("Email")]
             public string Email { get; set; }
+
+            [Column("email_confirmed")]
+            public bool EmailConfirmed { get; set; }
 
             [NotMapped]
             public string PhoneNumber { get; set; } // Оставлено как вычисляемое свойство
@@ -89,6 +125,14 @@ using System.Linq;
                     Role = string.Join(",", UserRoles.Select(ur => ur.Role?.RoleName));
                 }
             }
+
+        public class GameSystem
+        {
+            public int Id { get; set; }
+            public string Name { get; set; }
+            public string Version { get; set; }
+            public string Status { get; set; }
+        }
 
         public ICollection<UserRole> UserRoles { get; set; }
             public ICollection<EventParticipant> EventParticipants { get; set; }

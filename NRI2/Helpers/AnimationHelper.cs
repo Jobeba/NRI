@@ -12,21 +12,33 @@ namespace NRI.Helpers
     public static class AnimationHelper
     {
         public static async Task ToggleFullscreenMode(
-        Window window,
-        ScaleTransform contentScale,
-        ScaleTransform backgroundScale,
-        BlurEffect backgroundBlur,
-        PackIcon toggleIcon,
-        TimeSpan duration)
+            Window window,
+            ScaleTransform contentScale,
+            ScaleTransform backgroundScale,
+            BlurEffect backgroundBlur,
+            PackIcon toggleIcon,
+            TimeSpan duration)
         {
-            if (window.WindowState == WindowState.Maximized)
+            var isFullscreen = window.WindowState != WindowState.Maximized;
+
+            // Переключаем состояние окна
+            window.WindowState = isFullscreen ? WindowState.Maximized : WindowState.Normal;
+            window.ResizeMode = isFullscreen ? ResizeMode.NoResize : ResizeMode.CanResize;
+
+            // Обновляем иконку если есть
+            if (toggleIcon != null)
             {
-                await AnimateToWindowedMode(window, contentScale, backgroundScale, backgroundBlur, toggleIcon, duration);
+                toggleIcon.Kind = isFullscreen ? PackIconKind.WindowRestore : PackIconKind.WindowMaximize;
             }
-            else
-            {
-                await AnimateToFullscreenMode(window, contentScale, backgroundScale, backgroundBlur, toggleIcon, duration);
-            }
+
+            // Анимации
+            var targetBgScale = isFullscreen ? 1.05 : 1.1;
+            var targetBlur = isFullscreen ? 4 : 8;
+
+            await Task.WhenAll(
+                AnimateScaleAsync(backgroundScale, targetBgScale, targetBgScale, duration),
+                AnimateBlurAsync(backgroundBlur, targetBlur, duration)
+            );
         }
 
         private static async Task AnimateToWindowedMode(
@@ -61,17 +73,23 @@ namespace NRI.Helpers
         {
             window.WindowState = WindowState.Maximized;
             window.ResizeMode = ResizeMode.NoResize;
-            toggleIcon.Kind = PackIconKind.WindowRestore;
+
+            // Добавляем проверку на null
+            if (toggleIcon != null)
+            {
+                toggleIcon.Kind = PackIconKind.WindowRestore;
+            }
 
             var tasks = new List<Task>
-        {
-            AnimateScaleAsync(contentScale, 1.0, 1.0, duration),
-            AnimateBlurAsync(backgroundBlur, 4, duration),
-            AnimateScaleAsync(backgroundScale, 1.05, 1.05, duration)
-        };
+            {
+                AnimateScaleAsync(contentScale, 1.0, 1.0, duration),
+                AnimateBlurAsync(backgroundBlur, 4, duration),
+                AnimateScaleAsync(backgroundScale, 1.05, 1.05, duration)
+            };
 
             await Task.WhenAll(tasks);
         }
+
         public static Task AnimateScaleAsync(this ScaleTransform transform,
                                           double toScaleX, double toScaleY,
                                           TimeSpan duration)

@@ -15,6 +15,9 @@ using NRI.ViewModels;
 using NRI.Data;
 using NRI.Services;
 using NRI.Windows;
+using NRI.Service;
+using Microsoft.Extensions.Http;
+using System.Net.Http;
 
 namespace NRI
 {
@@ -71,8 +74,15 @@ namespace NRI
                       provider.GetRequiredService<ILogger<DatabaseService>>()
                   ));
 
+            services.AddHttpClient("ActivityClient", client =>
+            {
+                client.BaseAddress = new Uri("http://localhost:5000/api/");
+                client.DefaultRequestHeaders.Add("Accept", "application/json");
+            });
+
             // Регистрация сервисов
             services.AddSingleton<IConfiguration>(Configuration);
+            services.AddSingleton<IUserService, UserService>();
             services.AddSingleton<IEmailTemplateService, EmailTemplateService>();
             services.AddSingleton<ILogger<Autorizatsaya>>(provider =>
                         provider.GetRequiredService<ILoggerFactory>().CreateLogger<Autorizatsaya>());
@@ -101,8 +111,16 @@ namespace NRI
             services.AddTransient<IAuthService, AuthService>();
             services.AddTransient<IUserRepository, UserRepository>();
             services.AddTransient<INotificationService, NotificationService>();
+            services.AddTransient<IUserService, UserService>();
+            services.AddTransient<IGameSystemService, GameSystemService>();
             services.AddTransient<JwtService>();
-
+            services.AddTransient<UserActivityService>(provider =>
+            {
+                var httpClientFactory = provider.GetRequiredService<IHttpClientFactory>();
+                var userService = provider.GetRequiredService<IUserService>();
+                var httpClient = httpClientFactory.CreateClient("ActivityClient");
+                return new UserActivityService(httpClient, userService.GetCurrentUserId());
+            });
             // Регистрация контекста БД
 
             services.AddDbContext<AppDbContext>(options =>
@@ -112,7 +130,7 @@ namespace NRI
             // Регистрация ViewModels
             services.AddTransient<MainWindowViewModel>();
             services.AddTransient<DiceRollerViewModel>();
-
+            services.AddTransient<AdminViewModel>();
             // Регистрация Controls
             services.AddTransient<AdminWindowControl>();
             services.AddTransient<OrganizerWindowControl>();
@@ -144,13 +162,18 @@ namespace NRI
             services.AddTransient<IEmailTemplateService, EmailTemplateService>();
             services.AddTransient<IEmailSenderService, EmailSenderService>();
             services.AddTransient<IDatabaseService, DatabaseService>();
+            services.AddTransient<INavigationService, NavigationService>();
+
             // Email сервисы
             services.AddScoped<IEmailSenderService, EmailSenderService>();
             services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<IUserService, UserService>();
+            services.AddScoped<IUserPresenceService, UserPresenceService>();
             services.AddSingleton<ILogger<MainWindow>>(provider =>
                        provider.GetRequiredService<ILoggerFactory>().CreateLogger<MainWindow>());
+            services.AddSingleton<UserActivityService>();
+            services.AddHttpContextAccessor();
 
-            services.AddSingleton<INavigationService, NavigationService>();
             services.AddScoped<EventsService>();
 
             services.Configure<EmailSettings>(Configuration.GetSection("EmailSettings:Default"));

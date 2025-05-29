@@ -2,14 +2,17 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-        
+        xmlns:gif="http://wpfanimatedgif.codeplex.com"
         WindowState="Maximized"
         WindowStyle="None"
         ResizeMode="NoResize"
         AllowsTransparency="True"
+        Loaded="MainWindow_Loaded" 
         Background="Transparent">
 
     <Window.Resources>
+        
+        
         <!-- Glass Effect Style -->
         <Style x:Key="GlassButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="#33000000"/>
@@ -61,9 +64,19 @@
 
     <Grid x:Name="MainGrid">
         <!-- Animated Background -->
-        <Border x:Name="BackgroundContainer" Background="Black" Opacity="0.7">
-            <Image x:Name="BackgroundImage" Source="/Gifs/Background.gif" Stretch="UniformToFill"/>
-        </Border>
+        <!-- Animated Background -->
+        <Grid x:Name="BackgroundGrid">
+            <Border x:Name="BackgroundContainer" Background="#CC000000">
+                <Image x:Name="BackgroundImage" Stretch="UniformToFill">
+                    <Image.Effect>
+                        <BlurEffect x:Name="BackgroundBlur" Radius="4"/>
+                    </Image.Effect>
+                    <gif:ImageBehavior.AnimatedSource>
+                        <BitmapImage UriSource="pack://application:,,,/Gifs/background.gif" />
+                    </gif:ImageBehavior.AnimatedSource>
+                </Image>
+            </Border>
+        </Grid>
 
         <!-- Main Content -->
         <Grid Margin="20">
@@ -104,34 +117,7 @@
                             <Border Style="{StaticResource DiceRollItemStyle}" 
                                     Margin="0,15,0,0">
                                 <StackPanel>
-                                    <TextBlock Text="Броски кубиков" 
-                                               FontFamily="{StaticResource DarkFont}"
-                                               Foreground="#FF4CAF50"
-                                               FontWeight="Bold"
-                                               Margin="0,0,0,5"/>
-
-                                    <StackPanel Orientation="Horizontal">
-                                        <ComboBox ItemsSource="{Binding DiceTypes}" 
-                                              SelectedItem="{Binding SelectedDiceType}"
-                                              Margin="0,0,5,0"
-                                              Width="70"
-                                              Style="{StaticResource MaterialDesignComboBox}"/>
-                                        <TextBox Text="{Binding DiceCount}" 
-                                             Width="40"
-                                             Style="{StaticResource MaterialDesignTextBox}"/>
-                                    </StackPanel>
-
-                                    <TextBox Text="{Binding DiceModifier}" 
-                                         Margin="0,5,0,0"
-                                         Style="{StaticResource MaterialDesignTextBox}"
-                                         ToolTip="Модификатор"/>
-
-                                    <Button Content="Бросить" 
-                                        Command="{Binding RollDiceCommand}"
-                                        FontFamily="{StaticResource DarkFont}"
-                                        Style="{StaticResource GlassButtonStyle}"
-                                        Margin="0,5,0,0"/>
-
+                                    <StackPanel Orientation="Horizontal"/>
                                     <TextBlock Text="Последние броски:" 
                                            FontFamily="{StaticResource DarkFont}"
                                            Foreground="White"
@@ -154,7 +140,7 @@
                             <Button Style="{StaticResource GlassButtonStyle}"
                                     FontFamily="{StaticResource DarkFont}"
                                     Content="Персонажи"
-                                    Click="NavigateToCharacters"
+                                    Click="DiceRoller_Click"
                                     Margin="0,15,0,0"/>
 
                             <Button Style="{StaticResource GlassButtonStyle}"
@@ -165,38 +151,31 @@
                     </ScrollViewer>
 
                     <!-- User Info -->
-                    <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="10" HorizontalAlignment="Right">
-                        <Button Style="{StaticResource GlassButtonStyle}"
-                                FontFamily="{StaticResource DarkFont}"
-                                Content="Выход"
-                                Click="CloseButton_Click"
-                                MinWidth="80"/>
-                    </StackPanel>
                 </Grid>
             </Border>
+        </Grid>
+        <Grid x:Name="ContentContainer" Margin="20">
+            <!-- Main Content Area -->
+            <Frame x:Name="MainFrame" NavigationUIVisibility="Hidden" Margin="220,26,0,0"/>
 
-            <Grid x:Name="ContentContainer" Margin="20">
-                <!-- Main Content Area -->
-                <Frame x:Name="MainFrame" Grid.Column="1" NavigationUIVisibility="Hidden"/>
-
-                <!-- Window Controls -->
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top">
-                    <Button Style="{StaticResource GlassButtonStyle}"
+            <!-- Window Controls -->
+        </Grid>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top">
+            <Button Style="{StaticResource GlassButtonStyle}"
                         Content="{materialDesign:PackIcon Kind=WindowMinimize}"
                         Click="MinimizeWindow"
                         Width="40" Height="40"/>
 
-                    <Button Style="{StaticResource GlassButtonStyle}"
+            <Button Style="{StaticResource GlassButtonStyle}"
                         Content="{materialDesign:PackIcon Kind=WindowRestore}"
-                        Click="ToggleFullscreen_Click"
+                        Click="ToggleMaximize"
                         Width="40" Height="40"/>
 
-                    <Button Style="{StaticResource GlassButtonStyle}"
+            <Button Style="{StaticResource GlassButtonStyle}"
                         Content="{materialDesign:PackIcon Kind=WindowClose}"
-                        Click="CloseApp"
+                        Click="CloseButton_Click"
                         Width="40" Height="40"/>
-                </StackPanel>
-            </Grid>
-        </Grid>
+        </StackPanel>
     </Grid>
+
 </Window>

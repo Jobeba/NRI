@@ -2,6 +2,7 @@
 using NRI.Classes;
 using NRI.DB;
 using NRI.DiceRoll;
+using static NRI.Classes.User;
 
 namespace NRI.Data
 {
@@ -33,7 +34,7 @@ namespace NRI.Data
         public DbSet<User> Users { get; set; }
         public DbSet<CharacterSheet> Characters { get; set; }
         public DbSet<DiceRolling> DiceRolls { get; set; }
-
+        public DbSet<GameSystem> GameSystems { get; set; }
         public DbSet<Role> Roles { get; set; }
         public DbSet<Staff> Staff { get; set; }
         public DbSet<StaffEvent> StaffEvents { get; set; }
@@ -71,6 +72,15 @@ namespace NRI.Data
                 entity.Ignore(e => e.TokenExpiry);
                 entity.Ignore(e => e.IsTokenValid);
                 entity.Ignore(e => e.PhoneNumber);
+                entity.Property(e => e.LastActivity)
+                      .HasColumnName("LastActivity")
+                      .HasColumnType("datetime")
+                      .IsRequired(false);
+
+                entity.Property(e => e.Status)
+                    .HasColumnName("Status")
+                    .HasMaxLength(50)
+                    .IsRequired(false);
 
                 entity.HasData(
                     new User

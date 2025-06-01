@@ -1,8 +1,11 @@
 ﻿using MaterialDesignThemes.Wpf;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NRI.Classes;
 using NRI.Controls;
+using NRI.Data;
+using NRI.DB;
 using NRI.Helpers;
 using NRI.Pages;
 using NRI.Services;
@@ -10,7 +13,10 @@ using NRI.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
+using System.IO;
 using System.Linq;
+using System.Net.Http;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -20,11 +26,8 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Effects;
 using System.Windows.Media.Imaging;
+using System.Windows.Threading;
 using WpfAnimatedGif;
-using System.Security.Claims;
-using NRI.Data;
-using Microsoft.EntityFrameworkCore;
-using System.Net.Http;
 
 namespace NRI
 {
@@ -37,14 +40,20 @@ namespace NRI
         private readonly INavigationService _navigationService;
         private readonly JwtService _jwtService;
 
+        public ICommand BackToAuthCommand { get; }
+
         private bool _isMenuExpanded = false;
          private Grid _contentGrid;
         private readonly TimeSpan _animationDuration = TimeSpan.FromMilliseconds(400);
         private ScaleTransform _backgroundScale;
-        private BlurEffect _backgroundBlur;
         private ScaleTransform _contentScale;
         private PackIcon _toggleIcon;
         private bool _isWindowTransitionInProgress;
+
+        private DispatcherTimer _bgAnimationTimer;
+        private int _currentBgFrame;
+        private BitmapSource[] _bgFrames;
+        private BitmapImage _gifSource;
 
         public MainWindow(
             IServiceProvider serviceProvider,
@@ -56,16 +65,20 @@ namespace NRI
         {
             InitializeComponent();
 
-            
-
-            Loaded += MainWindow_Loaded;
-
             _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
+            _navigationService = navigationService ??
+                throw new ArgumentNullException(nameof(navigationService));
             _jwtService = jwtService ?? throw new ArgumentNullException(nameof(jwtService));
+            _backgroundScale = BackgroundImage.RenderTransform as ScaleTransform ??
+                   new ScaleTransform(1.05, 1.05);
 
-            DataContext = _serviceProvider.GetRequiredService<MainWindowViewModel>();
+            activityService = activityService ?? throw new ArgumentNullException(nameof(activityService));
+
+            var viewModel = _serviceProvider.GetRequiredService<MainWindowViewModel>();
+            viewModel.Initialize(_serviceProvider);
+
+            DataContext = viewModel;
 
             ToggleMenuCommand = new RelayCommand(() => ToggleMenuForCurrentContent());
 
@@ -89,10 +102,8 @@ namespace NRI
             else
             {
                 _backgroundScale = new ScaleTransform(1.05, 1.05);
-                BackgroundImage.RenderTransform = _backgroundScale;
-            }
 
-            _backgroundBlur = (BlurEffect)BackgroundImage.Effect ?? new BlurEffect { Radius = 4 };
+            }
 
             _contentGrid = new Grid
             {
@@ -103,16 +114,12 @@ namespace NRI
             };
             MainGrid.Children.Add(_contentGrid);
 
-
             InitializeTransforms();
 
-            // Гарантируем, что трансформации привязаны
-            BackgroundImage.RenderTransform = _backgroundScale;
-            BackgroundImage.Effect = _backgroundBlur;
+            CleanupResources();
 
-            LoadContentBasedOnRole();
+            InitializeBackground();
 
-            DataContext = _serviceProvider.GetRequiredService<MainWindowViewModel>();
 
             activityService.StartTracking();
 
@@ -124,41 +131,83 @@ namespace NRI
         {
             try
             {
-                if (Application.Current.Properties.Contains("JwtToken") &&
-                    Application.Current.Properties["JwtToken"] is string token)
+                // Проверяем наличие токена
+                if (!Application.Current.Properties.Contains("JwtToken"))
                 {
-                    var principal = _jwtService.ValidateToken(token);
-                    if (principal != null && DataContext is MainWindowViewModel vm)
-                    {
-                        // Получаем полные данные пользователя из базы
-                        using (var context = new AppDbContext())
-                        {
-                            var userId = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                            if (int.TryParse(userId, out var id))
-                            {
-                                var user = context.Users
-                                    .Include(u => u.UserRoles)
-                                    .ThenInclude(ur => ur.Role)
-                                    .FirstOrDefault(u => u.Id == id);
-
-                                if (user != null)
-                                {
-                                    // Получаем роли пользователя
-                                    var roles = user.UserRoles?.Select(ur => ur.Role?.RoleName).ToList()
-                                        ?? new List<string> { "Игрок" };
-
-                                    vm.CurrentUser = user;
-                                    vm.SetUserRoles(roles);
-                                    LoadContentBasedOnRole();
-                                    return;
-                                }
-                            }
-                        }
-                    }
+                    _logger.LogWarning("JWT токен не найден. Пользователь не аутентифицирован");
+                    ShowAuthWindow();
+                    return;
                 }
 
-                _logger.LogWarning("Пользователь не аутентифицирован");
-                ShowAuthWindow();
+                var token = Application.Current.Properties["JwtToken"] as string;
+                if (string.IsNullOrEmpty(token))
+                {
+                    _logger.LogWarning("Пустой JWT токен");
+                    ShowAuthWindow();
+                    return;
+                }
+
+                var principal = _jwtService.ValidateToken(token);
+                if (principal == null)
+                {
+                    _logger.LogWarning("Не удалось валидировать токен");
+                    ShowAuthWindow();
+                    return;
+                }
+
+                if (DataContext is not MainWindowViewModel vm)
+                {
+                    _logger.LogError("ViewModel не инициализирована");
+                    // Пробуем инициализировать ViewModel
+                    vm = _serviceProvider.GetRequiredService<MainWindowViewModel>();
+                    DataContext = vm;
+                }
+
+                // Получаем ID пользователя из токена
+                var userId = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (!int.TryParse(userId, out var id))
+                {
+                    _logger.LogWarning("Неверный ID пользователя в токене");
+                    ShowAuthWindow();
+                    return;
+                }
+
+                // Загружаем данные пользователя из БД
+                using (var context = new AppDbContext())
+                {
+                    var user = context.Users
+                        .Include(u => u.UserRoles)
+                        .ThenInclude(ur => ur.Role)
+                        .FirstOrDefault(u => u.Id == id);
+
+                    if (user == null)
+                    {
+                        _logger.LogWarning($"Пользователь с ID {id} не найден в БД");
+                        ShowAuthWindow();
+                        return;
+                    }
+
+                    // Обновляем активность
+                    user.LastActivity = DateTime.UtcNow;
+                    context.SaveChanges();
+
+                    // Получаем роли
+                    var roles = user.UserRoles?
+                        .Select(ur => ur.Role?.RoleName)
+                        .Where(r => !string.IsNullOrEmpty(r))
+                        .ToList() ?? new List<string>();
+
+                    if (!roles.Any())
+                    {
+                        _logger.LogWarning("Для пользователя не найдены роли в базе данных");
+                        roles = new List<string> { "Игрок" };
+                    }
+
+                    // Устанавливаем данные пользователя
+                    vm.CurrentUser = user;
+                    vm.SetUserRoles(roles);
+                    _logger.LogInformation($"Установлены роли: {string.Join(", ", roles)}");
+                }
             }
             catch (Exception ex)
             {
@@ -169,21 +218,27 @@ namespace NRI
 
         private void CleanupResources()
         {
-            // Останавливаем анимации
-            ImageBehavior.SetAnimatedSource(BackgroundImage, null);
+            try
+            {
+                // Останавливаем и освобождаем анимацию
+                ImageBehavior.SetAnimatedSource(BackgroundImage, null);
 
-            // Очищаем подписки
-            Loaded -= MainWindow_Loaded;
+                // Явно освобождаем источник изображения
+                if (BackgroundImage.Source is IDisposable disposable)
+                {
+                    disposable.Dispose();
+                }
 
-            // Освобождаем графические ресурсы
-            BackgroundImage.Source = null;
+                BackgroundImage.Source = null;
+                BackgroundImage.Effect = null;
 
-            // Очищаем DataContext
-            DataContext = null;
-
-            // Принудительный сбор мусора
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Ошибка при очистке ресурсов");
+            }
         }
 
         private void ToggleMenuForCurrentContent()
@@ -200,6 +255,12 @@ namespace NRI
             authWindow.Show();
             this.Close();
         }
+
+        private void Showdown_Click(object sender, RoutedEventArgs e)
+        {
+            Logout();
+        }
+
         private void Logout()
         {
             // Очищаем токен
@@ -216,12 +277,6 @@ namespace NRI
             this.Close();
         }
 
-        private void Showdown_Click(object sender, RoutedEventArgs e)
-        {
-            Logout();
-        }
-
-
         private async void MainMenuButton_Click(object sender, RoutedEventArgs e)
         {
             if (_isMenuExpanded)
@@ -234,31 +289,15 @@ namespace NRI
             }
             _isMenuExpanded = !_isMenuExpanded;
         }
+
         private async Task ExpandMenuAsync()
         {
             _contentGrid.Visibility = Visibility.Visible;
-            _contentGrid.Opacity = 0;
-
-            var opacityAnim = new DoubleAnimation(1, _animationDuration);
-            var scaleAnim = new DoubleAnimation(1, _animationDuration);
-
-            _contentGrid.BeginAnimation(OpacityProperty, opacityAnim);
-            ((ScaleTransform)_contentGrid.RenderTransform)
-                .BeginAnimation(ScaleTransform.ScaleXProperty, scaleAnim);
-            ((ScaleTransform)_contentGrid.RenderTransform)
-                .BeginAnimation(ScaleTransform.ScaleYProperty, scaleAnim);
-
-            await Task.Delay(_animationDuration);
+            var anim = new DoubleAnimation(1, TimeSpan.FromMilliseconds(200));
+            _contentGrid.BeginAnimation(OpacityProperty, anim);
+            await Task.Delay(200);
         }
-
-        public void SetUserRoles(List<string> roles)
-        {
-            if (DataContext is MainWindowViewModel vm)
-            {
-                vm.SetUserRoles(roles);
-                LoadContentBasedOnRole(); // Перезагружаем контент после установки ролей
-            }
-        }
+         
         private async Task CollapseMenuAsync()
         {
             var opacityAnim = new DoubleAnimation(0, _animationDuration);
@@ -274,39 +313,6 @@ namespace NRI
             _contentGrid.Visibility = Visibility.Collapsed;
         }
 
-        public void LoadContentBasedOnRole()
-        {
-            try
-            {
-                var vm = DataContext as MainWindowViewModel;
-                if (vm == null)
-                {
-                    _logger.LogWarning("ViewModel не инициализирована");
-                    return;
-                }
-
-                var highestRole = vm.HighestRole;
-                _logger.LogInformation($"Определена наивысшая роль: {highestRole}");
-
-                switch (highestRole)
-                {
-                    case "Администратор":
-                        MainFrame.Content = _serviceProvider.GetRequiredService<AdminWindowControl>();
-                        break;
-                    case "Организатор":
-                        MainFrame.Content = _serviceProvider.GetRequiredService<OrganizerWindowControl>();
-                        break;
-                    default:
-                        MainFrame.Content = _serviceProvider.GetRequiredService<PlayerWindowControl>();
-                        break;
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Ошибка загрузки контента");
-                MainFrame.Content = new Controls.ErrorPage($"Ошибка загрузки: {ex.Message}");
-            }
-        }      
 
         private void NavigateToProjects(object sender, RoutedEventArgs e)
         {
@@ -342,7 +348,7 @@ namespace NRI
 
             try
             {
-                if (_contentScale == null || _backgroundScale == null || _backgroundBlur == null)
+                if (_contentScale == null || _backgroundScale == null)
                 {
                     InitializeTransforms();
                 }
@@ -350,8 +356,6 @@ namespace NRI
                 await AnimationHelper.ToggleFullscreenMode(
                     this,
                     _contentScale,
-                    _backgroundScale,
-                    _backgroundBlur,
                     _toggleIcon,
                     _animationDuration);
             }
@@ -380,12 +384,9 @@ namespace NRI
                 else
                 {
                     _backgroundScale = new ScaleTransform(1.05, 1.05);
-                    BackgroundImage.RenderTransform = _backgroundScale;
+
                 }
 
-                // 2. Инициализация эффекта размытия фона
-                _backgroundBlur = BackgroundImage.Effect as BlurEffect ?? new BlurEffect { Radius = 4 };
-                BackgroundImage.Effect = _backgroundBlur;
 
                 // 3. Инициализация трансформации контента (ContentGrid)
                 var contentTransform = _contentGrid.RenderTransform;
@@ -436,20 +437,28 @@ namespace NRI
         {
             try
             {
-                // Для анимированного GIF используем ImageBehavior
-                var image = new BitmapImage(new Uri("pack://application:,,,/Gifs/background.gif"));
-                ImageBehavior.SetAnimatedSource(BackgroundImage, image);
-                ImageBehavior.SetRepeatBehavior(BackgroundImage, RepeatBehavior.Forever);
+                Dispatcher.Invoke(() =>
+                {
+                    var uri = new Uri("pack://application:,,,/Gifs/background.gif");
+                    var image = new BitmapImage(uri);
 
-                // Настройка эффектов
-                BackgroundImage.Stretch = Stretch.UniformToFill;
-                _backgroundBlur.Radius = 4;
+                    // Убедитесь, что старое изображение очищено
+                    ImageBehavior.SetAnimatedSource(BackgroundImage, null);
+
+                    ImageBehavior.SetAnimatedSource(BackgroundImage, image);
+                    ImageBehavior.SetRepeatBehavior(BackgroundImage, new RepeatBehavior(0));
+
+                    // Оптимизация производительности
+                    RenderOptions.SetBitmapScalingMode(BackgroundImage, BitmapScalingMode.LowQuality);
+                    RenderOptions.SetCachingHint(BackgroundImage, CachingHint.Cache);
+                });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ошибка загрузки фонового изображения");
-                // Запасной вариант
-                BackgroundImage.Source = new BitmapImage(new Uri("pack://application:,,,/Images/fallback-background.jpg"));
+                // Фолбэк на статичное изображение
+                var fallback = new BitmapImage(new Uri("pack://application:,,,/Images/fallback.jpg"));
+                BackgroundImage.Source = fallback;
             }
         }
 
@@ -477,8 +486,22 @@ namespace NRI
 
         protected override void OnClosed(EventArgs e)
         {
-            base.OnClosed(e);
+            // Правильное освобождение ресурсов
             ImageBehavior.SetAnimatedSource(BackgroundImage, null);
+            BackgroundImage.Source = null;
+
+            _bgAnimationTimer?.Stop();
+            _gifSource = null;
+            _bgFrames = null;
+
+            base.OnClosed(e);
+
+            // Принудительная очистка памяти
+            Dispatcher.Invoke(() =>
+            {
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+            }, DispatcherPriority.Background);
         }
 
         private void CloseApp(object sender, RoutedEventArgs e) => Application.Current.Shutdown();
@@ -494,6 +517,28 @@ namespace NRI
                     WindowState = WindowState.Minimized;
 
         private void ToggleMaximize(object sender, RoutedEventArgs e) =>
-            WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;       
+            WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
+
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (MainFrame.Content is BaseWindowControl currentControl)
+                {
+                    currentControl.NavigateToDiceRoller();
+                }
+                else
+                {
+                    var diceRollerPage = _serviceProvider.GetRequiredService<DiceRollerPage>();
+                    MainFrame.Navigate(diceRollerPage);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Ошибка навигации к DiceRoller");
+                MessageBox.Show("Ошибка открытия бросков кубиков", "Ошибка",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
     }
 }

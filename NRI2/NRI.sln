@@ -3,7 +3,19 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.11.35327.3
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NRI", "NRI.csproj", "{23D2A3CF-F2DF-428F-A660-5496E8CC7EE6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WPF", "WPF.csproj", "{23D2A3CF-F2DF-428F-A660-5496E8CC7EE6}"
+	ProjectSection(ProjectDependencies) = postProject
+		{15085E36-2A90-4A1D-BBFF-93D99774F44A} = {15085E36-2A90-4A1D-BBFF-93D99774F44A}
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyApi", "..\MyApi\MyApi.csproj", "{6A2FB189-FE21-4041-94BC-FD2F61897795}"
+	ProjectSection(ProjectDependencies) = postProject
+		{15085E36-2A90-4A1D-BBFF-93D99774F44A} = {15085E36-2A90-4A1D-BBFF-93D99774F44A}
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared", "Shared", "{36D591C7-65C7-A0D1-1CBC-10CDE441BDC8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UserStatusDto2", "..\UserStatusDto2\UserStatusDto2.csproj", "{15085E36-2A90-4A1D-BBFF-93D99774F44A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,9 +27,20 @@ Global
 		{23D2A3CF-F2DF-428F-A660-5496E8CC7EE6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{23D2A3CF-F2DF-428F-A660-5496E8CC7EE6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{23D2A3CF-F2DF-428F-A660-5496E8CC7EE6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6A2FB189-FE21-4041-94BC-FD2F61897795}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6A2FB189-FE21-4041-94BC-FD2F61897795}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6A2FB189-FE21-4041-94BC-FD2F61897795}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6A2FB189-FE21-4041-94BC-FD2F61897795}.Release|Any CPU.Build.0 = Release|Any CPU
+		{15085E36-2A90-4A1D-BBFF-93D99774F44A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{15085E36-2A90-4A1D-BBFF-93D99774F44A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{15085E36-2A90-4A1D-BBFF-93D99774F44A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{15085E36-2A90-4A1D-BBFF-93D99774F44A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{15085E36-2A90-4A1D-BBFF-93D99774F44A} = {36D591C7-65C7-A0D1-1CBC-10CDE441BDC8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {2D6E131E-8FE2-4EFA-9B84-0E67B64EB5CF}

@@ -1,20 +1,75 @@
-﻿using NRI.Classes;
+﻿using CommonServiceLocator;
+using DnsClient.Internal;
+using GalaSoft.MvvmLight.CommandWpf;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using NRI.API;
+using NRI.Classes;
+using NRI.Controls;
+using NRI.Shared;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Security.Claims;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Input;
+
 
 namespace NRI.ViewModels
 {
     public class MainWindowViewModel : INotifyPropertyChanged
     {
-
+        private readonly ILogger<MainWindowViewModel> _logger;
+        private readonly ApiClient _apiClient;
+        private readonly Timer _refreshTimer;
+        private bool _showAllPanels = true;
         private User _currentUser;
         private List<string> _userRoles = new List<string>();
         private string _highestRole;
+
+        private IServiceProvider _serviceProvider;
         public bool IsAuthenticated => CurrentUser?.IsTokenValid ?? false;
+        private string _apiBaseUrl = "http://localhost:5000";
+        public ObservableCollection<UserStatusDto> OnlineUsers { get; } = new ObservableCollection<UserStatusDto>();
+        public MainWindowViewModel(ApiClient apiClient, ILogger<MainWindowViewModel> logger)
+        {
+            _apiClient = apiClient;
+            _logger = logger;
+
+            // Загружаем данные сразу
+            LoadOnlineUsers().ConfigureAwait(false);
+
+            // Обновляем каждые 30 секунд
+            _refreshTimer = new Timer(_ => LoadOnlineUsers().Wait(),
+                null, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
+        }
+
+        private async Task LoadOnlineUsers()
+        {
+            try
+            {
+                var users = await _apiClient.GetAsync<List<UserStatusDto>>("api/useractivity/active");
+
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    OnlineUsers.Clear();
+                    foreach (var user in users)
+                    {
+                        OnlineUsers.Add(user);
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading online users: {ex.Message}");
+            }
+        }
 
         public User CurrentUser
         {
@@ -39,18 +94,135 @@ namespace NRI.ViewModels
              ? $"Добро пожаловать, {CurrentUser?.Login ?? "Пользователь"}"
              : "Гость";
 
-        public void SetUserRoles(List<string> roles)
+        private bool _showRolePanels = true;
+        public bool ShowRolePanels
         {
-            UserRoles = roles;
-            System.Diagnostics.Debug.WriteLine($"Установлены роли: {string.Join(", ", UserRoles)}");
-            System.Diagnostics.Debug.WriteLine($"Наивысшая роль: {HighestRole}");
+            get => _showRolePanels;
+            set
+            {
+                if (_showRolePanels != value)
+                {
+                    _showRolePanels = value;
+                    OnPropertyChanged();
+                }
+            }
         }
 
+        private RelayCommand _togglePanelsCommand;
+        public RelayCommand TogglePanelsCommand =>
+            _togglePanelsCommand ??= new RelayCommand(ToggleRolePanels);
+
+        private object _currentContent;
+        public object CurrentContent
+        {
+            get => _currentContent;
+            set
+            {
+                if (_currentContent != value)
+                {
+                    _currentContent = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        public void Initialize(IServiceProvider serviceProvider)
+        {
+            if (serviceProvider == null)
+            {
+                _logger?.LogError("ServiceProvider is null in Initialize");
+                return;
+            }
+
+            _serviceProvider = serviceProvider;
+            UpdateContentBasedOnRole();
+        }
+
+
+        private void ToggleRolePanels()
+        {
+            try
+            {
+                ShowRolePanels = !ShowRolePanels;
+                UpdateContentBasedOnRole();
+                _logger?.LogInformation($"Переключение панелей ролей. Новое состояние: {ShowRolePanels}");
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Ошибка при переключении панелей ролей");
+            }
+        }
+
+        public void UpdateContentBasedOnRole()
+        {
+            _logger.LogInformation($"UpdateContent: ShowRolePanel={ShowRolePanels}, Roles={string.Join(", ", UserRoles)}");
+            if (_serviceProvider == null)
+            {
+                _logger?.LogWarning("ServiceProvider is null in UpdateContentBasedOnRole");
+                return;
+            }
+
+            if (!ShowRolePanels)
+            {
+                CurrentContent = _serviceProvider.GetRequiredService<BaseWindowControl>();
+                _logger?.LogInformation($"Показываем базовую панель. AdminWindow не загружен.");
+                return;
+            }
+
+            _logger?.LogInformation($"Текущая роль: {HighestRole}");
+
+            switch (HighestRole)
+            {
+                case "Администратор":
+                    var adminControl = _serviceProvider.GetRequiredService<AdminWindowControl>();
+                    CurrentContent = adminControl;
+                    _logger?.LogInformation("Админ-панель загружена");
+                    break;
+                case "Организатор":
+                    CurrentContent = _serviceProvider.GetRequiredService<OrganizerWindowControl>();
+                    break;
+                default:
+                    CurrentContent = _serviceProvider.GetRequiredService<PlayerWindowControl>();
+                    break;
+            }
+        }
+
+        public void SetUserRoles(List<string> roles)
+        {
+            if (roles == null)
+            {
+                _logger.LogWarning("Получен null вместо списка ролей");
+                roles = new List<string>();
+            }
+
+            // Фильтрация и проверка ролей
+            roles = roles
+                .Where(r => !string.IsNullOrWhiteSpace(r))
+                .Distinct()
+                .ToList();
+
+            if (!roles.Any())
+            {
+                _logger.LogWarning("Получен пустой список ролей после фильтрации");
+                roles = new List<string> { "Игрок" };
+            }
+
+            _userRoles = roles;
+            HighestRole = DetermineHighestRole(roles);
+
+            _logger.LogInformation($"Установлены роли: {string.Join(", ", _userRoles)}");
+            _logger.LogInformation($"Определена наивысшая роль: {HighestRole}");
+
+            OnPropertyChanged(nameof(UserRoles));
+            OnPropertyChanged(nameof(HighestRole));
+            UpdateContentBasedOnRole();
+        }
         public List<string> UserRoles
         {
             get => _userRoles;
             set
             {
+                _logger.LogInformation($"Установка ролей: {string.Join(", ", value)}");
                 _userRoles = value ?? new List<string> { "Игрок" };
                 HighestRole = DetermineHighestRole(_userRoles);
                 OnPropertyChanged();
@@ -69,13 +241,11 @@ namespace NRI.ViewModels
 
         public void SetUserFromClaims(ClaimsPrincipal principal)
         {
-            if (principal == null)
-            {
-                CurrentUser = null;
-                return;
-            }
+            var roles = principal.Claims
+                .Where(c => c.Type == ClaimTypes.Role)
+                .Select(c => c.Value)
+                .ToList();
 
-            var roles = principal.FindAll(ClaimTypes.Role).Select(c => c.Value).ToList();
             if (!roles.Any()) roles.Add("Игрок");
 
             CurrentUser = new User
@@ -90,18 +260,29 @@ namespace NRI.ViewModels
 
         private string DetermineHighestRole(List<string> roles)
         {
-            var roleHierarchy = new Dictionary<string, int>
-        {
-            { "Администратор", 3 },
-            { "Организатор", 2 },
-            { "Игрок", 1 }
-        };
+            if (roles == null || !roles.Any())
+            {
+                _logger.LogWarning("Определение роли: пустой список, возвращаем 'Игрок'");
+                return "Игрок";
+            }
 
-            return roles
-                .OrderByDescending(r => roleHierarchy.ContainsKey(r) ? roleHierarchy[r] : 0)
-                .FirstOrDefault() ?? "Игрок";
+            var roleHierarchy = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["Администратор"] = 3,
+                ["Организатор"] = 2,
+                ["Игрок"] = 1
+            };
+
+            var highestRole = roles
+                .Select(r => new {
+                    Name = r,
+                    Priority = roleHierarchy.TryGetValue(r, out var p) ? p : 0
+                })
+                .OrderByDescending(x => x.Priority)
+                .FirstOrDefault();
+
+            return highestRole?.Priority > 0 ? highestRole.Name : "Игрок";
         }
-
 
         public event PropertyChangedEventHandler PropertyChanged;
         private string _selectedDiceType;

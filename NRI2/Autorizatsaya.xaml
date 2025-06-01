@@ -14,6 +14,7 @@
         ResizeMode="NoResize"
         AllowsTransparency="True"
         Background="Transparent"
+        Loaded="Autorizatsaya_Loaded" 
         MouseLeftButtonDown="Window_MouseDown">
 
     <Window.Resources>
@@ -46,6 +47,7 @@
                 </Setter.Value>
             </Setter>
         </Style>
+        
         <!-- Современный стиль для рамки -->
         <Style TargetType="Border" x:Key="ModernWindowBorder">
             <Setter Property="BorderBrush">
@@ -102,6 +104,7 @@
                                From="20" To="0" Duration="0:0:0.3"/>
         </Storyboard>
     </Window.Resources>
+    
     <Grid x:Name="MainGrid">
         <Grid.RenderTransform>
             <ScaleTransform x:Name="ScaleTransform" CenterX="0.5" CenterY="0.5"/>
@@ -113,17 +116,15 @@
                 </TransformGroup>
             </Grid.RenderTransform>
 
-            <!-- Фон с эффектом размытия -->
+            <!-- Фон -->
             <Grid x:Name="BackgroundGrid">
                 <Image x:Name="BackgroundImage" Stretch="UniformToFill">
                     <Image.RenderTransform>
                         <ScaleTransform x:Name="BackgroundScale" ScaleX="1.05" ScaleY="1.05"/>
                     </Image.RenderTransform>
-                    <Image.Effect>
-                        <BlurEffect x:Name="BackgroundBlur" Radius="4"/>
-                    </Image.Effect>
                 </Image>
             </Grid>
+            
             <!-- Основное содержимое с анимированной границей -->
             <Border x:Name="MainBorder" 
                 BorderBrush="{DynamicResource MaterialDesignDivider}" 
@@ -162,14 +163,14 @@
                                             Style="{StaticResource WindowControlButton}"
                                             Click="ToggleFullscreen_Click"
                                             ToolTip="Переключить режим">
-                                                                                <materialDesign:PackIcon x:Name="ToggleIcon" 
+                                            <materialDesign:PackIcon x:Name="ToggleIcon" 
                                                Kind="WindowRestore" 
                                                Width="18" 
                                                Height="18"/>
                                         </Button>
                                         <Button Style="{StaticResource WindowControlButton}"
-                                Click="CloseButton_Click"
-                                ToolTip="Закрыть">
+                                                Click="CloseButton_Click"
+                                                ToolTip="Закрыть">
                                             <materialDesign:PackIcon Kind="Close" Width="18" Height="18"/>
                                         </Button>
                                     </StackPanel>
@@ -240,7 +241,7 @@
                                                    FontFamily="{StaticResource CyberFonts}"
                                                    Command="{Binding LoginCommand}"
                                                    Style="{StaticResource MaterialDesignRaisedButton}"
-                                                   Margin="0 20 0 10"/>
+                                                   Margin="0 20 0 10" />
 
                                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0 10 0 0">
                                                     <TextBlock FontFamily="{StaticResource CyberFonts}">

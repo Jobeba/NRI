@@ -631,6 +631,7 @@
     </Compile>
     <Compile Include="Converters\BooleanToVisibilityConverter.cs" />
     <Compile Include="Converters\BoolToColorConverter.cs" />
+    <Compile Include="Converters\BoolToIconConverter.cs" />
     <Compile Include="Converters\ColorToBrushConverter.cs" />
     <Compile Include="Converters\DoubleConverter.cs" />
     <Compile Include="Converters\ImagePathToImageSourceConverter.cs" />
@@ -694,6 +695,7 @@
     <Compile Include="interface\IGameSystemService.cs" />
     <Compile Include="interface\INotificationService.cs" />
     <Compile Include="interface\IRoleNavigation.cs" />
+    <Compile Include="interface\IUserActivityService.cs" />
     <Compile Include="interface\IUserPresenceService.cs" />
     <Compile Include="interface\IUserService.cs" />
     <Compile Include="Migrations\20250421165931_FixIdentityIssues.cs" />
@@ -843,6 +845,7 @@
     <Compile Include="staff.xaml.cs">
       <DependentUpon>staff.xaml</DependentUpon>
     </Compile>
+    <Compile Include="UserStatusDto.cs" />
     <Compile Include="ViewModels\AdminViewModel.cs" />
     <Compile Include="ViewModels\BaseViewModel.cs" />
     <Compile Include="ViewModels\EventsViewModel.cs" />

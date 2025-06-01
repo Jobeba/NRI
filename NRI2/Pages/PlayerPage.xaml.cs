@@ -32,11 +32,7 @@ namespace NRI.Pages
 
         private void MainMenu_click(object sender, RoutedEventArgs e)
         {
-            var mainWindow = Application.Current.MainWindow as MainWindow;
-            if (mainWindow != null)
-            {
-                mainWindow.LoadContentBasedOnRole(); 
-            }
+
         }
 
 

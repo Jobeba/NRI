@@ -1,22 +1,26 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿// UserService.cs
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using NRI.Classes;
 using NRI.Data;
-using NRI.Services;
+using NRI.Shared;
 using System;
 using System.Collections.Generic;
-using System.IdentityModel.Claims;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
-namespace NRI.Service
+namespace NRI.Services
 {
     public class UserService : IUserService
     {
         private readonly AppDbContext _context;
         private readonly TimeSpan _onlineThreshold = TimeSpan.FromMinutes(5);
         private readonly IHttpContextAccessor _httpContextAccessor;
-        public UserService(AppDbContext context, IHttpContextAccessor httpContextAccessor)
+
+        public UserService(
+            AppDbContext context,
+            IHttpContextAccessor httpContextAccessor)
         {
             _context = context;
             _httpContextAccessor = httpContextAccessor;
@@ -25,7 +29,7 @@ namespace NRI.Service
         public int GetCurrentUserId()
         {
             var userIdClaim = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier);
-            return int.Parse(userIdClaim?.Value ?? "0");
+            return userIdClaim != null ? int.Parse(userIdClaim.Value) : 0;
         }
 
         public async Task UpdateUserActivityAsync(int userId)
@@ -38,79 +42,75 @@ namespace NRI.Service
             }
         }
 
-        public async Task<List<User>> GetOnlineUsersAsync()
+        public async Task<List<UserStatusDto>> GetOnlineUsersAsync()
         {
-            var threshold = DateTime.UtcNow.AddMinutes(-5);
             return await _context.Users
-                .Where(u => u.LastActivity >= threshold)
-                .AsNoTracking()
+                .Where(u => u.LastActivity != null)
+                .Select(u => new UserStatusDto
+                {
+                    UserId = u.Id,
+                    Username = u.Login,
+                    IsOnline = DateTime.UtcNow - u.LastActivity.Value < _onlineThreshold,
+                    LastActivity = u.LastActivity.Value
+                })
+                .OrderByDescending(u => u.LastActivity)
                 .ToListAsync();
         }
 
         public async Task<List<User>> GetAllUserListAsync()
         {
-            // Используем ToListAsync() для асинхронного выполнения
-            return await _context.Users.ToListAsync();
-        }
-
-
-        public async Task<IEnumerable<User>> GetAllUsersAsync()
-        {
             return await _context.Users
+                .Include(u => u.UserRoles)
+                .ThenInclude(ur => ur.Role)
                 .AsNoTracking()
                 .ToListAsync();
         }
 
+        public async Task<IEnumerable<User>> GetAllUsersAsync()
+        {
+            return await _context.Users.ToListAsync();
+        }
+
         public async Task<User> GetUserByIdAsync(int id)
         {
-            return await _context.Users
-                .AsNoTracking()
-                .FirstOrDefaultAsync(u => u.Id == id);
+            return await _context.Users.FindAsync(id);
         }
 
         public async Task<bool> CreateUserAsync(User user)
         {
-            try
-            {
-                _context.Users.Add(user);
-                return await _context.SaveChangesAsync() > 0;
-            }
-            catch (DbUpdateException)
-            {
-                // Логирование ошибки
-                return false;
-            }
+            _context.Users.Add(user);
+            return await _context.SaveChangesAsync() > 0;
         }
 
         public async Task<bool> UpdateUserAsync(User user)
         {
-            try
-            {
-                _context.Entry(user).State = EntityState.Modified;
-                return await _context.SaveChangesAsync() > 0;
-            }
-            catch (DbUpdateException)
-            {
-                // Логирование ошибки
-                return false;
-            }
+            _context.Entry(user).State = EntityState.Modified;
+            return await _context.SaveChangesAsync() > 0;
         }
 
         public async Task<bool> DeleteUserAsync(int id)
         {
-            try
-            {
-                var user = await _context.Users.FindAsync(id);
-                if (user == null) return false;
+            var user = await _context.Users.FindAsync(id);
+            if (user == null) return false;
 
-                _context.Users.Remove(user);
-                return await _context.SaveChangesAsync() > 0;
-            }
-            catch (DbUpdateException)
+            _context.Users.Remove(user);
+            return await _context.SaveChangesAsync() > 0;
+        }
+
+        public async Task<UserStatisticsDto> GetUserStatisticsAsync()
+        {
+            var users = await _context.Users.ToListAsync();
+            var now = DateTime.UtcNow;
+
+            return new UserStatisticsDto
             {
-                // Логирование ошибки
-                return false;
-            }
+                TotalUsers = users.Count,
+                OnlineUsers = users.Count(u => u.LastActivity != null &&
+                    now - u.LastActivity.Value < _onlineThreshold),
+                OfflineUsers = users.Count(u => u.LastActivity == null ||
+                    now - u.LastActivity.Value >= _onlineThreshold),
+                LastUpdated = DateTime.Now
+            };
         }
     }
 }

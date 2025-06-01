@@ -191,7 +191,8 @@
                                 <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="Auto"/>
                                 <DataGridTextColumn Header="Название" Binding="{Binding Name}" Width="*"/>
                                 <DataGridTextColumn Header="Версия" Binding="{Binding Version}" Width="120"/>
-                                <DataGridTextColumn Header="Статус" Binding="{Binding Status}" Width="150">
+                                <DataGridTextColumn Header="Статус" 
+                                                   Binding="{Binding IsOnline, Converter={StaticResource BoolToStatusConverter}}">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="HorizontalAlignment" Value="Center"/>
@@ -213,7 +214,7 @@
                                                         CommandParameter="{Binding}">
                                                     <materialDesign:PackIcon Kind="Pencil" />
                                                 </Button>
-                                                
+
                                                 <Button Style="{StaticResource MaterialDesignIconButton}"
                                                         Foreground="#FFE53935"
                                                         ToolTip="Удалить"
@@ -253,7 +254,7 @@
                                     Margin="5 0 0 0">
                                 <materialDesign:PackIcon Kind="Delete" />
                             </Button>
-                            
+
                         </StackPanel>
                     </Grid>
                 </Expander>
@@ -261,17 +262,72 @@
                 <!-- Статистика -->
                 <Expander Header="Статистика и аналитика" 
                           Tag="ChartLine"
-                          Foreground="DarkViolet"
-                          Background="#FF4CAF50">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
+                          Foreground="White"
+                          Background="#FF2D2D30">
+                    <StackPanel>
+                        <!-- Общая статистика -->
+                        <Grid Margin="10">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
 
-                        <!-- Графики -->
-                        <TextBlock Text="{Binding UsersCount, StringFormat='Всего пользователей: {0}'}" FontSize="16"/>
-                    </Grid>
+                            <TextBlock Grid.Row="0" 
+                                 Text="{Binding UserStatistics.TotalUsers, StringFormat='Всего пользователей: {0}'}"
+                                 FontSize="16"
+                                 FontWeight="Bold"/>
+
+                            <TextBlock Grid.Row="1" 
+                                 Text="{Binding UserStatistics.OnlineUsers, StringFormat='Онлайн: {0}'}"
+                                 FontSize="16"
+                                 Foreground="LimeGreen"
+                                 Margin="0,10,0,0"/>
+
+                            <TextBlock Grid.Row="2" 
+                                 Text="{Binding UserStatistics.OfflineUsers, StringFormat='Оффлайн: {0}'}"
+                                 FontSize="16"
+                                 Foreground="LightGray"
+                                 Margin="0,5,0,0"/>
+
+                            <TextBlock Grid.Row="3"
+                             Text="{Binding UserStatistics.LastUpdated, StringFormat='Обновлено: {0:HH:mm:ss}'}"
+                             FontSize="12"
+                             Foreground="Gray"
+                             Margin="0,10,0,0"/>
+                        </Grid>
+
+                        <!-- Список активных пользователей -->
+                        <TextBlock Text="Активные пользователи:" 
+                                 FontSize="14" 
+                                 FontWeight="Bold"
+                                 Margin="10,15,10,5"/>
+                        
+                        <DataGrid ItemsSource="{Binding OnlineUsers}" 
+                                AutoGenerateColumns="False"
+                                MaxHeight="300"
+                                Margin="10,0,10,10">
+                            
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Пользователь" Binding="{Binding Username}"/>
+                                <DataGridTextColumn Header="Последняя активность" 
+                                        Binding="{Binding LastActivity, StringFormat='{}{0:dd.MM.yy HH:mm}'}"/>
+                                <DataGridTemplateColumn Header="Статус" Width="80">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                <Ellipse Width="10" Height="10" 
+                                     Fill="{Binding IsOnline, Converter={StaticResource BoolToColorConverter}}"
+                                     Margin="0,0,5,0"/>
+                                                <TextBlock Text="{Binding IsOnline, Converter={StaticResource BoolToStatusConverter}}"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </StackPanel>
                 </Expander>
             </StackPanel>
         </ScrollViewer>

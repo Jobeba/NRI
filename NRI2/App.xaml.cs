@@ -1,44 +1,49 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using NRI.API;
 using NRI.Classes;
-using System;
-using System.IO;
-using System.Windows;
-using NRI.Models;
 using NRI.Classes.Email;
-using NRI.Pages;
 using NRI.Controls;
-using NRI.DiceRoll;
-using NRI.ViewModels;
 using NRI.Data;
+using NRI.DiceRoll;
+using NRI.Models;
+using NRI.Pages;
 using NRI.Services;
+using NRI.ViewModels;
 using NRI.Windows;
-using NRI.Service;
-using Microsoft.Extensions.Http;
+using System;
+using System.IdentityModel.Claims;
+using System.IO;
 using System.Net.Http;
+using System.Windows;
+using System.Windows.Interop;
+using System.Windows.Media;
 
 namespace NRI
 {
     public partial class App : Application
     {
-        public static IServiceProvider ServiceProvider { get; private set; }
+        public static IServiceProvider ServiceProvider;
         public static IConfiguration Configuration { get; private set; }
 
         protected override void OnStartup(StartupEventArgs e)
         {
             try
             {
+                RenderOptions.ProcessRenderMode = RenderMode.SoftwareOnly;
+
                 var builder = new ConfigurationBuilder()
                     .SetBasePath(Directory.GetCurrentDirectory())
                     .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
 
                 Configuration = builder.Build();
 
-                var services = new ServiceCollection();
-                ConfigureServices(services);
-                ServiceProvider = services.BuildServiceProvider();
+                var serviceCollection = new ServiceCollection();
+                ConfigureServices(serviceCollection);
+                ServiceProvider = serviceCollection.BuildServiceProvider();
 
                 InitializeDatabase();
 
@@ -80,6 +85,11 @@ namespace NRI
                 client.DefaultRequestHeaders.Add("Accept", "application/json");
             });
 
+            services.AddHttpClient<UserActivityService>(client =>
+            {
+                client.BaseAddress = new Uri(Configuration["ApiBaseUrl"]);
+            });
+
             // Регистрация сервисов
             services.AddSingleton<IConfiguration>(Configuration);
             services.AddSingleton<IUserService, UserService>();
@@ -89,6 +99,16 @@ namespace NRI
             services.AddSingleton<ILogger<MainWindow>>(provider =>
                     provider.GetRequiredService<ILoggerFactory>().CreateLogger<MainWindow>());
             services.AddSingleton<IConfigService, ConfigService>();
+            services.AddSingleton<Func<int>>(provider =>
+            {
+                var httpContextAccessor = provider.GetRequiredService<IHttpContextAccessor>();
+                return () =>
+                {
+                    var userId = httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                    return int.TryParse(userId, out var id) ? id : 0;
+                };
+            });
+
             services.AddTransient<IUserRepository>(provider =>
                   new UserRepository(
                       provider.GetRequiredService<IDatabaseService>(),
@@ -114,13 +134,16 @@ namespace NRI
             services.AddTransient<IUserService, UserService>();
             services.AddTransient<IGameSystemService, GameSystemService>();
             services.AddTransient<JwtService>();
-            services.AddTransient<UserActivityService>(provider =>
+            services.AddTransient<IUserActivityService, UserActivityService>();
+
+            services.AddScoped<ApiClient>(provider =>
             {
                 var httpClientFactory = provider.GetRequiredService<IHttpClientFactory>();
-                var userService = provider.GetRequiredService<IUserService>();
-                var httpClient = httpClientFactory.CreateClient("ActivityClient");
-                return new UserActivityService(httpClient, userService.GetCurrentUserId());
+                var httpClient = httpClientFactory.CreateClient("ApiClient");
+                var jwtService = provider.GetRequiredService<JwtService>();
+                return new ApiClient(httpClient, jwtService);
             });
+
             // Регистрация контекста БД
 
             services.AddDbContext<AppDbContext>(options =>
@@ -128,17 +151,41 @@ namespace NRI
                 sqlServerOptions => sqlServerOptions.MigrationsAssembly("NRI")));
 
             // Регистрация ViewModels
-            services.AddTransient<MainWindowViewModel>();
+            services.AddSingleton<MainWindowViewModel>(provider =>
+            {
+                var apiClient = provider.GetRequiredService<ApiClient>();
+                var logger = provider.GetRequiredService<ILogger<MainWindowViewModel>>();
+                return new MainWindowViewModel(apiClient, logger);
+            });
+
+
             services.AddTransient<DiceRollerViewModel>();
             services.AddTransient<AdminViewModel>();
             // Регистрация Controls
+            services.AddTransient<BaseWindowControl>();
             services.AddTransient<AdminWindowControl>();
             services.AddTransient<OrganizerWindowControl>();
             services.AddTransient<PlayerWindowControl>();
 
             // Регистрация окон
             services.AddTransient<Autorizatsaya>();
-            services.AddTransient<MainWindow>();
+
+            services.AddSingleton<MainWindow>(provider =>
+            {
+                var viewModel = provider.GetRequiredService<MainWindowViewModel>();
+                var window = new MainWindow(
+                    provider,
+                    provider.GetRequiredService<ILogger<MainWindow>>(),
+                    provider.GetRequiredService<INavigationService>(),
+                    provider.GetRequiredService<JwtService>(),
+                    provider.GetRequiredService<UserActivityService>())
+                {
+                    DataContext = viewModel
+                };
+                viewModel.Initialize(provider); // Инициализация сервис-провайдера
+                return window;
+            });
+
             services.AddTransient<Player>();
             services.AddTransient<staff>();
             services.AddTransient<Reviews>();
@@ -171,7 +218,8 @@ namespace NRI
             services.AddScoped<IUserPresenceService, UserPresenceService>();
             services.AddSingleton<ILogger<MainWindow>>(provider =>
                        provider.GetRequiredService<ILoggerFactory>().CreateLogger<MainWindow>());
-            services.AddSingleton<UserActivityService>();
+            services.AddScoped<UserActivityService>();
+            services.AddScoped<IGameSystemService, GameSystemService>();
             services.AddHttpContextAccessor();
 
             services.AddScoped<EventsService>();

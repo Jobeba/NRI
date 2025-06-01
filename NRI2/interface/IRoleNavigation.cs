@@ -1,14 +1,8 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using NRI.Pages;
 using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media.Animation;
 
 namespace NRI
 {
@@ -23,11 +17,6 @@ namespace NRI
     {
         protected readonly IServiceProvider ServiceProvider;
 
-        public BaseWindowControl()
-        {
-            // Default constructor
-        }
-
         public BaseWindowControl(IServiceProvider serviceProvider)
         {
             ServiceProvider = serviceProvider;
@@ -37,7 +26,7 @@ namespace NRI
         {
             if (this.FindName("MenuColumn") is ColumnDefinition menuColumn)
             {
-                var animation = new DoubleAnimation
+                var animation = new System.Windows.Media.Animation.DoubleAnimation
                 {
                     From = isVisible ? 0 : 180,
                     To = isVisible ? 180 : 0,
@@ -56,7 +45,7 @@ namespace NRI
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Ошибка навигации: " + ex.Message);
+                MessageBox.Show("Navigation error: " + ex.Message);
             }
         }
 
@@ -69,7 +58,7 @@ namespace NRI
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Ошибка навигации: " + ex.Message);
+                MessageBox.Show("Navigation error: " + ex.Message);
             }
         }
     }

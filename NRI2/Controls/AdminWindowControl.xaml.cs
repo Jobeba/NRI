@@ -21,7 +21,9 @@ namespace NRI.Controls
             {
                 var userService = App.ServiceProvider.GetRequiredService<IUserService>();
                 var gameSystemService = App.ServiceProvider.GetRequiredService<IGameSystemService>();
-                DataContext = new AdminViewModel(userService, gameSystemService);
+                var activityService = App.ServiceProvider.GetRequiredService<IUserActivityService>();
+
+                 DataContext = Application.Current.MainWindow?.DataContext;
             }
         }
 

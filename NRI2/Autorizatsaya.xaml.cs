@@ -43,8 +43,6 @@ namespace NRI
         private readonly IUserRepository _userRepository;
         private readonly AnimationManager _animationManager = new AnimationManager(TimeSpan.FromMilliseconds(400));
         private bool _isWindowTransitionInProgress;
-        private ScaleTransform _backgroundScale;
-        private BlurEffect _backgroundBlur;
         private Border _mainBorder;
         private ScaleTransform _contentScale;
         private PackIcon _toggleIcon;
@@ -149,23 +147,7 @@ namespace NRI
                 };
             }
         }
-        private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
-        {
-            if (_backgroundScale == null) return;
 
-            if (WindowState == WindowState.Maximized)
-            {
-                var anim = new DoubleAnimation(1.05, TimeSpan.FromMilliseconds(300));
-                _backgroundScale.BeginAnimation(ScaleTransform.ScaleXProperty, anim);
-                _backgroundScale.BeginAnimation(ScaleTransform.ScaleYProperty, anim);
-            }
-            else
-            {
-                var anim = new DoubleAnimation(1.0, TimeSpan.FromMilliseconds(300));
-                _backgroundScale.BeginAnimation(ScaleTransform.ScaleXProperty, anim);
-                _backgroundScale.BeginAnimation(ScaleTransform.ScaleYProperty, anim);
-            }
-        }
         public Autorizatsaya(IAuthService authService,
                            INavigationService navigationService,
                            ILogger<Autorizatsaya> logger,
@@ -179,9 +161,7 @@ namespace NRI
             InitializeComponent();
             DataContext = this;
             // Инициализация полей для анимации
-            _backgroundScale = (ScaleTransform)FindName("BackgroundScale") ?? new ScaleTransform(1.0, 1.0);
-            _scaleTransform = (ScaleTransform)FindName("ScaleTransform");
-            _backgroundBlur = (BlurEffect)FindName("BackgroundBlur");
+
             _mainBorder = (Border)FindName("MainBorder");
             _toggleIcon = (PackIcon)FindName("ToggleIcon");
             _contentScale = (ScaleTransform)FindName("ContentScale") ??
@@ -208,8 +188,6 @@ namespace NRI
             VerifyTwoFactorCommand = new RelayCommand(async () => await VerifyTwoFactorCode());
             ConfirmPasswordCommand = new RelayCommand(async () => await ConfirmPassword());
             ChangePasswordCommand = new RelayCommand(async () => await ChangePasswordAsync());
-
-            InitializeBackground();
 
             _userRepository = userRepository;
             _emailSender = emailSender;
@@ -260,32 +238,37 @@ namespace NRI
             else if (panelToShow == ChangePasswordPanel)
                ChangePasswordLoginBox.Focus();
         }
+
         private void InitializeBackground()
         {
             try
             {
-                var uri = new Uri("pack://application:,,,/Gifs/camp.gif");
-                var image = new BitmapImage(uri);
+                Dispatcher.Invoke(() =>
+                {
+                    var uri = new Uri("pack://application:,,,/Gifs/background2.gif");
+                    var image = new BitmapImage(uri);
 
-                ImageBehavior.SetAnimatedSource(BackgroundImage, image);
-                ImageBehavior.SetRepeatBehavior(BackgroundImage, new RepeatBehavior(0)); 
-                // Бесконечное повторение
+                    // Убедитесь, что старое изображение очищено
+                    ImageBehavior.SetAnimatedSource(BackgroundImage, null);
 
-                // Инициализация трансформаций и эффекто
-                BackgroundImage.RenderTransform = _backgroundScale;
-                BackgroundImage.Effect = _backgroundBlur;
+                    ImageBehavior.SetAnimatedSource(BackgroundImage, image);
+                    ImageBehavior.SetRepeatBehavior(BackgroundImage, new RepeatBehavior(0));
+
+                    // Оптимизация производительности
+                    RenderOptions.SetBitmapScalingMode(BackgroundImage, BitmapScalingMode.LowQuality);
+                    RenderOptions.SetCachingHint(BackgroundImage, CachingHint.Cache);
+                });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ошибка загрузки фонового изображения");
-                var bitmap = new BitmapImage();
-                bitmap.BeginInit();
-                bitmap.CacheOption = BitmapCacheOption.OnLoad;
-                bitmap.UriSource = new Uri("pack://application:...");
-                bitmap.EndInit();
-                BackgroundImage.Source = bitmap;
+                // Фолбэк на статичное изображение
+                var fallback = new BitmapImage(new Uri("pack://application:,,,/Images/fallback.jpg"));
+                BackgroundImage.Source = fallback;
             }
         }
+
+
         private async Task LoginAsync()
         {
             if (!ValidateLoginInput(out var error))
@@ -594,6 +577,7 @@ namespace NRI
             return GenerateSecretKey() ??
                    new Random().Next(100000, 999999).ToString();
         }
+
         private string GenerateSecretKey()
         {
             try
@@ -607,6 +591,7 @@ namespace NRI
                 return new Random().Next(100000, 999999).ToString(); // Fallback
             }
         }
+
         private bool ValidateRegistrationInput(out string error)
         {
             error = null;
@@ -783,12 +768,18 @@ namespace NRI
                     Roles = roles
                 });
 
+                
+
                 // Сохраняем данные
                 Application.Current.Properties["JwtToken"] = token;
+
+                var activityService = _serviceProvider.GetRequiredService<UserActivityService>();
+                activityService.StartTracking();
 
                 // Освобождаем ресурсы текущего окна перед созданием нового
                 CleanupResources();
 
+                _logger.LogInformation($"User roles for {username}: {string.Join(", ", roles)}");
                 // Создаем главное окно через ServiceProvider
                 var mainWindow = _serviceProvider.GetRequiredService<MainWindow>();
                 if (mainWindow.DataContext is MainWindowViewModel vm)
@@ -924,15 +915,7 @@ namespace NRI
                     Snackbar.Background = isError
                         ? new SolidColorBrush(Color.FromRgb(239, 83, 80)) // Красный для ошибок
                         : new SolidColorBrush(Color.FromRgb(67, 160, 71)); // Зеленый для успеха
-                    // Добавляем тень для лучшей видимости
-                    Snackbar.Effect = new DropShadowEffect
-                    {
-                        Color = Colors.Black,
-                        Direction = 270,
-                        ShadowDepth = 4,
-                        Opacity = 0.4,
-                        BlurRadius = 8
-                    };
+
                     // Показываем сообщение
                     Snackbar.MessageQueue.Enqueue(
                         stackPanel,
@@ -1166,8 +1149,6 @@ namespace NRI
                 await AnimationHelper.ToggleFullscreenMode(
                     this,
                     _contentScale,
-                    _backgroundScale,
-                    _backgroundBlur,
                     _toggleIcon,
                     _animationDuration);
             }
@@ -1229,6 +1210,7 @@ namespace NRI
                 DragMove();
             }
         }
+
         private void CloseButton_Click(object sender, RoutedEventArgs e)
         {
             // Анимация закрытия окна
@@ -1237,6 +1219,7 @@ namespace NRI
             closingAnimation.Completed += (s, _) => Close();
             BeginAnimation(OpacityProperty, closingAnimation);
         }
+
         protected virtual void OnPropertyChanged([System.Runtime.CompilerServices.CallerMemberName] string propertyName = null)
         {
             PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(propertyName));
@@ -1388,51 +1371,108 @@ namespace NRI
             TwoFactorCodeChangePasswordBox.Text = "";
             SwitchToPanel(AuthPanel);
         }
+        private void Autorizatsaya_Loaded(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // Инициализация только после полной загрузки окна
+                if (!System.ComponentModel.DesignerProperties.GetIsInDesignMode(this))
+                {
+                    InitializeBackground();
+
+                    // Дополнительная инициализация, если нужно
+                    if (AuthPanel != null)
+                    {
+                        AuthPanel.Visibility = Visibility.Visible;
+                        LoginBox.Focus();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Critical error in window loaded handler");
+                ShowSnackbar("Произошла ошибка при инициализации окна", true);
+
+                // В аварийном режиме показать хотя бы панель авторизации
+                if (AuthPanel != null) AuthPanel.Visibility = Visibility.Visible;
+            }
+        }
 
         protected override void OnClosed(EventArgs e)
         {
-            base.OnClosed(e);
-            // Освобождаем ресурсы анимации
             ImageBehavior.SetAnimatedSource(BackgroundImage, null);
             BackgroundImage.Source = null;
 
-            // Освобождаем другие ресурсы
-            _backgroundBlur = null;
-            _backgroundScale = null;
-            _contentScale = null;
-            CleanupResources();
+            // Отписываемся от всех событий
+            Loaded -= Autorizatsaya_Loaded;
+
+            base.OnClosed(e);
+
+            // Оптимизированный сбор мусора
+            Task.Run(() =>
+            {
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+            });
         }
 
         private void CleanupResources()
         {
-            // Останавливаем анимации GIF
-            ImageBehavior.SetAnimatedSource(BackgroundImage, null);
+            try
+            {
+                // Останавливаем и освобождаем анимацию
+                ImageBehavior.SetAnimatedSource(BackgroundImage, null);
 
-            // Очищаем подписки на события
+                // Явно освобождаем источник изображения
+                if (BackgroundImage.Source is IDisposable disposable)
+                {
+                    disposable.Dispose();
+                }
 
-            // Освобождаем графические ресурсы
-            BackgroundImage.Source = null;
+                BackgroundImage.Source = null;
+                BackgroundImage.Effect = null;
 
-            // Принудительный сбор мусора
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Ошибка при очистке ресурсов");
+            }
         }
 
         private void CleanupAnimations()
         {
-            // Очистка анимаций
+            // Очистка анимаций основного окна
             BeginAnimation(OpacityProperty, null);
-            RenderTransform = null;
-            Effect = null;
+            BeginAnimation(RenderTransformProperty, null);
 
-            // Для всех дочерних элементов
-            foreach (var child in LogicalTreeHelper.GetChildren(this).OfType<FrameworkElement>())
+            // Очистка анимаций дочерних элементов
+            foreach (var child in FindVisualChildren<FrameworkElement>(this))
             {
                 child.BeginAnimation(OpacityProperty, null);
-                child.RenderTransform = null;
-                child.Effect = null;
+                child.BeginAnimation(RenderTransformProperty, null);
             }
         }
 
+        private static IEnumerable<T> FindVisualChildren<T>(DependencyObject depObj) where T : DependencyObject
+        {
+            if (depObj != null)
+            {
+                for (int i = 0; i < VisualTreeHelper.GetChildrenCount(depObj); i++)
+                {
+                    var child = VisualTreeHelper.GetChild(depObj, i);
+                    if (child is T t)
+                    {
+                        yield return t;
+                    }
+
+                    foreach (T childOfChild in FindVisualChildren<T>(child))
+                    {
+                        yield return childOfChild;
+                    }
+                }
+            }
+        }
     }
 }

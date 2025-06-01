@@ -1,17 +1,18 @@
-﻿using System;
+﻿using GalaSoft.MvvmLight.Command;
+using NRI.Classes;
+using NRI.Services;
+using NRI.Shared;
+using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
-using GalaSoft.MvvmLight.Command;
-using NRI.Classes;
-using NRI.Extensions;
-using NRI.Models;
-using NRI.Services;
 using static NRI.Classes.User;
+
 
 namespace NRI.ViewModels
 {
@@ -20,11 +21,14 @@ namespace NRI.ViewModels
         private readonly IUserService _userService;
         private readonly IGameSystemService _gameSystemService;
         private readonly DispatcherTimer _refreshTimer;
+        private readonly IUserActivityService _activityService;
         private bool _isLoading;
+        private readonly Timer _statsTimer;
+        private readonly TimeSpan _statsUpdateInterval = TimeSpan.FromMinutes(1);
 
-        public ObservableCollection<User> Users { get; } = new ObservableCollection<User>();
+        public ObservableCollection<User> Users { get; } = new();
         public ObservableCollection<GameSystem> GameSystems { get; } = new ObservableCollection<GameSystem>();
-        public ObservableCollection<User> OnlineUsers { get; } = new ObservableCollection<User>();
+        public ObservableCollection<UserStatusDto> OnlineUsers { get; set; }
 
         public ICommand AddUserCommand { get; }
         public ICommand DeleteUserCommand { get; }
@@ -32,23 +36,28 @@ namespace NRI.ViewModels
         public ICommand DeleteGameSystemCommand { get; }
         public ICommand ImportTemplatesCommand { get; }
 
+        public RelayCommand RefreshCommand { get; }
         public int UsersCount => Users.Count;
 
-        public AdminViewModel(IUserService userService, IGameSystemService gameSystemService)
+        public AdminViewModel(
+                   IUserService userService,
+                   IGameSystemService gameSystemService,
+                   IUserActivityService activityService)
         {
             _userService = userService;
             _gameSystemService = gameSystemService;
+            _activityService = activityService;
 
+            RefreshCommand = new RelayCommand(async () => await LoadDataAsync());
             AddUserCommand = new RelayCommand(AddUser);
             DeleteUserCommand = new RelayCommand(DeleteUser);
             AddGameSystemCommand = new RelayCommand(AddGameSystem);
             DeleteGameSystemCommand = new RelayCommand(DeleteGameSystem);
             ImportTemplatesCommand = new RelayCommand(ImportTemplates);
 
-
             _refreshTimer = new DispatcherTimer
             {
-                Interval = TimeSpan.FromSeconds(30) // Обновляем статус каждые 30 секунд
+                Interval = TimeSpan.FromSeconds(30)
             };
             _refreshTimer.Tick += async (s, e) => await LoadDataAsync();
             _refreshTimer.Start();
@@ -63,20 +72,29 @@ namespace NRI.ViewModels
 
             try
             {
-                Users.Clear();
-                var users = (await _userService.GetAllUserListAsync()).ToList();
+                var users = await _userService.GetAllUserListAsync();
+                var onlineUsers = await _activityService.GetActiveUsersAsync();
 
                 Application.Current.Dispatcher.Invoke(() =>
                 {
+                    Users.Clear();
                     foreach (var user in users)
                     {
+                        // Обновляем роли для пользователя
+                        user.SetRolesFromCollection();
                         Users.Add(user);
+                    }
+
+                    OnlineUsers.Clear();
+                    foreach (var user in onlineUsers)
+                    {
+                        OnlineUsers.Add(user);
                     }
                 });
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Ошибка загрузки пользователей: {ex.Message}");
+                MessageBox.Show($"Ошибка загрузки данных: {ex.Message}");
             }
             finally
             {

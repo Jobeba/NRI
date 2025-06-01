@@ -2,16 +2,19 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-        xmlns:gif="http://wpfanimatedgif.codeplex.com"
-        WindowState="Maximized"
+        xmlns:converter="clr-namespace:NRI.Converters"
+        xmlns:gif="http://wpfanimatedgif.codeplex.com" 
+        xmlns:viewmodels="clr-namespace:NRI.ViewModels" 
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+        WindowState="Maximized" 
         WindowStyle="None"
         ResizeMode="NoResize"
         AllowsTransparency="True"
         Loaded="MainWindow_Loaded" 
         Background="Transparent">
-
+    
     <Window.Resources>
-        
+        <converter:BoolToIconConverter x:Key="BoolToIconConverter"/>
         
         <!-- Glass Effect Style -->
         <Style x:Key="GlassButtonStyle" TargetType="Button">
@@ -31,6 +34,7 @@
                             <ContentPresenter HorizontalAlignment="Center" 
                                           VerticalAlignment="Center"/>
                         </Border>
+                        
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="border" Property="Background" Value="#660077CC"/>
@@ -43,7 +47,7 @@
                 </Setter.Value>
             </Setter>
         </Style>
-
+        
         <!-- Dice Roll Item Style -->
         <Style x:Key="DiceRollItemStyle" TargetType="Border">
             <Setter Property="Background" Value="#33000000"/>
@@ -52,41 +56,27 @@
             <Setter Property="CornerRadius" Value="4"/>
             <Setter Property="Padding" Value="8"/>
             <Setter Property="Margin" Value="0,5"/>
-            <Setter Property="Effect">
-                <Setter.Value>
-                    <DropShadowEffect BlurRadius="5" 
-                                    ShadowDepth="2" 
-                                    Opacity="0.3"/>
-                </Setter.Value>
-            </Setter>
         </Style>
     </Window.Resources>
-
+    
     <Grid x:Name="MainGrid">
-        <!-- Animated Background -->
-        <!-- Animated Background -->
+        <!-- Оптимизированный анимированный фон -->
         <Grid x:Name="BackgroundGrid">
-            <Border x:Name="BackgroundContainer" Background="#CC000000">
-                <Image x:Name="BackgroundImage" Stretch="UniformToFill">
-                    <Image.Effect>
-                        <BlurEffect x:Name="BackgroundBlur" Radius="4"/>
-                    </Image.Effect>
-                    <gif:ImageBehavior.AnimatedSource>
-                        <BitmapImage UriSource="pack://application:,,,/Gifs/background.gif" />
-                    </gif:ImageBehavior.AnimatedSource>
-                </Image>
-            </Border>
+            <Image x:Name="BackgroundImage" Stretch="UniformToFill">
+                <Image.RenderTransform>
+                    <ScaleTransform x:Name="BackgroundScale" ScaleX="1.05" ScaleY="1.05"/>
+                </Image.RenderTransform>
+            </Image>
         </Grid>
-
         <!-- Main Content -->
         <Grid Margin="20">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="220"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-
+            
             <!-- Side Menu -->
-            <Border Grid.Column="0" CornerRadius="8" Margin="0,0,10,0"
+            <Border Grid.Column="0" CornerRadius="2" Margin="0,0,10,0"
                     Background="#331E1E1E" BorderBrush="#44FFFFFF" BorderThickness="1">
                 <Grid>
                     <Grid.RowDefinitions>
@@ -94,7 +84,7 @@
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
-
+                    
                     <!-- App Title -->
                     <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="10,15">
                         <Image Source="/icon/image.ico" Width="32" Height="32"/>
@@ -104,68 +94,87 @@
                                    FontWeight="Bold"                                     
                                    Foreground="White" Margin="10,0,0,0"/>
                     </StackPanel>
-
+                    
                     <!-- Navigation Menu -->
-                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-                        <StackPanel Margin="10,5">
-                            <Button Style="{StaticResource GlassButtonStyle}"
-                                    FontFamily="{StaticResource DarkFont}"
-                                    Content="Главная"
-                                    Click="NavigateToHome"/>
+                    <ScrollViewer Grid.Row="1" 
+                                  VirtualizingPanel.IsVirtualizing="True"
+                                  VirtualizingPanel.ScrollUnit="Pixel"
+                                  VerticalScrollBarVisibility="Auto">
+                        
+                        <VirtualizingStackPanel>
+                            <StackPanel Margin="10,5">
+                                <Button Style="{StaticResource GlassButtonStyle}"
+                                    Command="{Binding TogglePanelsCommand}"
+                                    ToolTip="Переключить отображение панелей по ролям">
+                                    <Button.Content>
+                                        <materialDesign:PackIcon 
+                                        Kind="{Binding ShowRolePanels, 
+                                        Converter={StaticResource BoolToIconConverter}}"/>
+                                    </Button.Content>
+                                </Button>
 
-                            <!-- Dice Roll Section -->
-                            <Border Style="{StaticResource DiceRollItemStyle}" 
+                                <!-- Dice Roll Section -->
+                                <Border Style="{StaticResource DiceRollItemStyle}" 
                                     Margin="0,15,0,0">
-                                <StackPanel>
-                                    <StackPanel Orientation="Horizontal"/>
-                                    <TextBlock Text="Последние броски:" 
+                                    <StackPanel>
+                                        <StackPanel Orientation="Horizontal"/>
+                                        
+                                        <TextBlock Text="Последние броски:" 
                                            FontFamily="{StaticResource DarkFont}"
                                            Foreground="White"
                                            Margin="0,10,0,5"/>
-
-                                    <ItemsControl ItemsSource="{Binding RecentRolls}">
-                                        <ItemsControl.ItemTemplate>
-                                            <DataTemplate>
-                                                <Border Style="{StaticResource DiceRollItemStyle}">
-                                                    <TextBlock Text="{Binding}"
-                                                           Foreground="White"
-                                                           TextWrapping="Wrap"/>
-                                                </Border>
-                                            </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
-                                </StackPanel>
-                            </Border>
-
-                            <Button Style="{StaticResource GlassButtonStyle}"
+                                        
+                                        <ItemsControl ItemsSource="{Binding RecentRolls}"
+                                                  VirtualizingPanel.IsVirtualizing="True"
+                                                  VirtualizingPanel.VirtualizationMode="Recycling">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <VirtualizingStackPanel />
+                                                </ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                </Border>
+                                
+                                <Button Style="{StaticResource GlassButtonStyle}"
                                     FontFamily="{StaticResource DarkFont}"
                                     Content="Персонажи"
                                     Click="DiceRoller_Click"
                                     Margin="0,15,0,0"/>
-
-                            <Button Style="{StaticResource GlassButtonStyle}"
+                                
+                                <Button Style="{StaticResource GlassButtonStyle}"
                                     FontFamily="{StaticResource DarkFont}"
                                     Content="Настройки"
                                     Margin="0,5,0,0"/>
-                        </StackPanel>
-                    </ScrollViewer>
 
+                                <Button Style="{StaticResource GlassButtonStyle}"
+                                    FontFamily="{StaticResource DarkFont}"
+                                    Content="Выйти с аккаунта"
+                                    Margin="0,5,0,0" 
+                                    Click="Showdown_Click"/>
+                            </StackPanel>
+                        </VirtualizingStackPanel>
+                    </ScrollViewer>
                     <!-- User Info -->
                 </Grid>
             </Border>
         </Grid>
         <Grid x:Name="ContentContainer" Margin="20">
             <!-- Main Content Area -->
-            <Frame x:Name="MainFrame" NavigationUIVisibility="Hidden" Margin="220,26,0,0"/>
+            <Frame x:Name="MainFrame" 
+                   Content="{Binding CurrentContent, Mode=OneWay}"
+                   NavigationUIVisibility="Hidden" 
+                   Margin="220,26,0,0"/>
 
             <!-- Window Controls -->
         </Grid>
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top">
+            
             <Button Style="{StaticResource GlassButtonStyle}"
                         Content="{materialDesign:PackIcon Kind=WindowMinimize}"
                         Click="MinimizeWindow"
                         Width="40" Height="40"/>
-
+            
             <Button Style="{StaticResource GlassButtonStyle}"
                         Content="{materialDesign:PackIcon Kind=WindowRestore}"
                         Click="ToggleMaximize"
@@ -177,5 +186,4 @@
                         Width="40" Height="40"/>
         </StackPanel>
     </Grid>
-
 </Window>

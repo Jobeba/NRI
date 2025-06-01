@@ -1,5 +1,7 @@
-﻿using NRI.Classes;
-using NRI.Models;
+﻿
+using NRI.Classes;
+using NRI.Shared;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -12,11 +14,10 @@ namespace NRI.Services
         Task<bool> CreateUserAsync(User user);
         Task<bool> UpdateUserAsync(User user);
         Task<bool> DeleteUserAsync(int id);
-
-        // Добавляем новые методы
         Task<List<User>> GetAllUserListAsync();
-        Task<List<User>> GetOnlineUsersAsync();
         Task UpdateUserActivityAsync(int userId);
         int GetCurrentUserId();
+        Task<List<UserStatusDto>> GetOnlineUsersAsync();
+        Task<UserStatisticsDto> GetUserStatisticsAsync();
     }
 }

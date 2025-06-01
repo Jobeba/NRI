@@ -1,5 +1,13 @@
 ﻿<UserControl x:Class="NRI.Controls.BaseWindowControl"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <ContentControl Content="{Binding MainContent}"/>
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition x:Name="MenuColumn" Width="0"/>
+            <ColumnDefinition/>
+        </Grid.ColumnDefinitions>
+
+        <ContentControl Grid.Column="0" Content="{Binding SideMenuContent}"/>
+        <ContentControl Grid.Column="1" Content="{Binding MainContent}"/>
+    </Grid>
 </UserControl>

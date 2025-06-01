@@ -53,7 +53,8 @@ namespace NRI.ViewModels
                 }
             }
         }
-
+        public int UserId { get; set; }
+        public string Role { get; set; }
         public UserViewModel()
         {
             _statusTimer = new DispatcherTimer

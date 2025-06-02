@@ -60,6 +60,7 @@
                     <KeyBinding Command="{Binding VerifyTwoFactorCommand}" Key="Enter"/>
                 </TextBox.InputBindings>
             </TextBox>
+            
             <Button x:Name="FinishButton"
                         Content="Готово" 
                         Style="{StaticResource MaterialDesignRaisedButton}"

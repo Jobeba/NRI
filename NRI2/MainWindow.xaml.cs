@@ -64,7 +64,7 @@ namespace NRI
 
         {
             InitializeComponent();
-
+ 
             _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _navigationService = navigationService ??
@@ -125,6 +125,10 @@ namespace NRI
 
             _logger.LogInformation("Главное меню запустилось");
 
+        }
+
+        public MainWindow()
+        {
         }
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -251,9 +255,9 @@ namespace NRI
 
         private void ShowAuthWindow()
         {
-            var authWindow = _serviceProvider.GetRequiredService<Autorizatsaya>();
-            authWindow.Show();
-            this.Close();
+
+            _navigationService.ShowWindow<Autorizatsaya>();
+            this.Close(); // Закрываем текущее окно
         }
 
         private void Showdown_Click(object sender, RoutedEventArgs e)
@@ -264,18 +268,13 @@ namespace NRI
         private void Logout()
         {
             // Очищаем токен
-            if (Application.Current.Properties.Contains("JwtToken"))
-            {
-                Application.Current.Properties.Remove("JwtToken");
-            }
+            Application.Current.Properties.Remove("JwtToken");
 
-            // Показываем окно авторизации
-            var authWindow = _serviceProvider.GetRequiredService<Autorizatsaya>();
-            authWindow.Show();
-
-            // Закрываем текущее окно
+            // Используем NavigationService для перехода обратно к авторизации
+            _navigationService.ShowWindow<Autorizatsaya>();
             this.Close();
         }
+
 
         private async void MainMenuButton_Click(object sender, RoutedEventArgs e)
         {
@@ -439,7 +438,7 @@ namespace NRI
             {
                 Dispatcher.Invoke(() =>
                 {
-                    var uri = new Uri("pack://application:,,,/Gifs/background.gif");
+                    var uri = new Uri("pack://application:,,,/Gifs/Background.gif");
                     var image = new BitmapImage(uri);
 
                     // Убедитесь, что старое изображение очищено

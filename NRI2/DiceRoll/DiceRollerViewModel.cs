@@ -36,7 +36,9 @@ namespace NRI.DiceRoll
         private readonly IAuthService _authService;
         private readonly DbContextOptions<AppDbContext> _dbOptions;
         public string CustomDescription { get; set; }
-
+        private MediaPlayer _themePlayer = new MediaPlayer();
+        private string _selectedTheme;
+        private ObservableCollection<string> _availableThemes = new ObservableCollection<string>();
         private readonly MediaPlayer _diceSoundPlayer = new MediaPlayer();
         private User _currentUser;   
         private readonly Random _random = new Random();
@@ -81,9 +83,14 @@ namespace NRI.DiceRoll
         public ICommand RemoveInventoryItemCommand { get; }
         public ICommand RemoveAttributeCommand => new RelayCommand<CharacterAttributeItem>(RemoveAttribute);
         public ICommand RemoveSkillCommand => new RelayCommand<CharacterSkillItem>(RemoveSkill);
-
+        public ICommand PlayThemeCommand => new RelayCommand(PlaySelectedTheme);
+        public ICommand StopThemeCommand => new RelayCommand(() => _themePlayer.Stop());
+        public ICommand LoadCustomThemeCommand => new RelayCommand(LoadCustomTheme);
         public ObservableCollection<DiceSet> DiceSets { get; } = new ObservableCollection<DiceSet>();
         private ObservableCollection<string> _lastRollMessages = new ObservableCollection<string>();
+
+
+
         public class DiceSet
         {
             public string DiceType { get; set; }
@@ -437,7 +444,10 @@ namespace NRI.DiceRoll
             _diceSoundPlayer = new MediaPlayer();
             _diceSoundPlayer.MediaEnded += (s, e) => _diceSoundPlayer.Stop();
 
+            InitializeThemes();
 
+            _themePlayer.MediaEnded += (s, e) => _themePlayer.Position = TimeSpan.Zero;
+            _themePlayer.MediaFailed += (s, e) => _logger?.Error("Ошибка воспроизведения музыкальной темы");
             AddInventoryItemCommand = new RelayCommand(AddInventoryItem);
             RemoveInventoryItemCommand = new RelayCommand<InventoryItem>(RemoveInventoryItem);
 
@@ -1453,7 +1463,6 @@ namespace NRI.DiceRoll
                 MessageBox.Show($"Ошибка: {ex.Message}");
             }
         }
-
         private void ApplySystemTemplateToCharacter(CharacterSheet character)
         {
             if (character == null || string.IsNullOrEmpty(character.System))
@@ -1465,9 +1474,16 @@ namespace NRI.DiceRoll
             if (_systemTemplates.TryGetValue(character.System, out var template))
             {
                 CurrentTemplate = template;
-
-                // Инициализируем персонажа из шаблона
                 character.InitializeFromTemplate(template);
+
+                // Включить музыку по умолчанию при смене системы
+                SelectedTheme = character.System switch
+                {
+                    "D&D 5e" => "Тема D&D (Эпичная фэнтези)",
+                    "Pathfinder" => "Тема Pathfinder (Героическая)",
+                    "Call of Cthulhu" => "Тема Call of Cthulhu (Мистическая)",
+                    _ => "Без музыки"
+                };
 
                 OnPropertyChanged(nameof(CurrentTemplate));
                 OnPropertyChanged(nameof(CurrentCharacter));
@@ -2146,10 +2162,123 @@ namespace NRI.DiceRoll
                 CurrentCharacter.UpdateSkillsJson();
             }
         }
+        public ObservableCollection<string> AvailableThemes
+        {
+            get => _availableThemes;
+            set
+            {
+                _availableThemes = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public string SelectedTheme
+        {
+            get => _selectedTheme;
+            set
+            {
+                _selectedTheme = value;
+                OnPropertyChanged();
+                PlaySelectedTheme();
+            }
+        }
+        private void InitializeThemes()
+        {
+            AvailableThemes.Clear();
+
+            // Добавляем темы по умолчанию для каждой системы
+            AvailableThemes.Add("Тема D&D (Эпичная фэнтези)");
+            AvailableThemes.Add("Тема Pathfinder (Героическая)");
+            AvailableThemes.Add("Тема Call of Cthulhu (Мистическая)");
+            AvailableThemes.Add("Без музыки");
+
+            SelectedTheme = "Без музыки";
+        }
+
+        private void PlaySelectedTheme()
+        {
+            if (SelectedTheme == null || SelectedTheme == "Без музыки")
+            {
+                _themePlayer.Stop();
+                return;
+            }
+
+            try
+            {
+                Uri themeUri = SelectedTheme switch
+                {
+                    "Тема D&D (Эпичная фэнтези)" => new Uri("pack://application:,,,/Themes/D&D_theme.mp3", UriKind.Absolute),
+                    "Тема Pathfinder (Героическая)" => new Uri("pack://application:,,,/Resources/Music/pathfinder_theme.mp3", UriKind.Absolute),
+                    "Тема Call of Cthulhu (Мистическая)" => new Uri("pack://application:,,,/Resources/Music/cthulhu_theme.mp3", UriKind.Absolute),
+                    _ => null
+                };
+
+                if (themeUri != null)
+                {
+                    _themePlayer.Open(themeUri);
+                    _themePlayer.Play();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger?.Error(ex, "Ошибка воспроизведения музыкальной темы");
+            }
+        }
+
+
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+        private bool _enableAnimations = true;
+        public bool EnableAnimations
+        {
+            get => _enableAnimations;
+            set
+            {
+                _enableAnimations = value;
+                OnPropertyChanged();
+            }
+        }
+
+        private double _themeVolume = 0.5;
+        public double ThemeVolume
+        {
+            get => _themeVolume;
+            set
+            {
+                _themeVolume = value;
+                _themePlayer.Volume = value;
+                OnPropertyChanged();
+            }
+        }
+        private void LoadCustomTheme()
+        {
+            var openFileDialog = new OpenFileDialog
+            {
+                Filter = "Audio Files (*.mp3;*.wav)|*.mp3;*.wav",
+                Title = "Выберите файл музыкальной темы"
+            };
+
+            if (openFileDialog.ShowDialog() == true)
+            {
+                try
+                {
+                    string themeName = Path.GetFileNameWithoutExtension(openFileDialog.FileName);
+                    AvailableThemes.Add($"Пользовательская: {themeName}");
+
+                    // Сохраняем путь к файлу или копируем его в папку ресурсов
+                    // В этом примере просто воспроизводим напрямую
+                    _themePlayer.Open(new Uri(openFileDialog.FileName));
+                    _themePlayer.Play();
+                }
+                catch (Exception ex)
+                {
+                    _logger?.Error(ex, "Ошибка загрузки пользовательской темы");
+                    MessageBox.Show("Не удалось загрузить музыкальную тему");
+                }
+            }
         }
     }
 }

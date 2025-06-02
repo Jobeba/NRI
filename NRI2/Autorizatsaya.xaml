@@ -223,18 +223,18 @@
                                 Margin="0 0 0 20"/>
 
                                                 <StackPanel x:Name="TwoFactorPanel"
-                               Visibility="Collapsed">
+                                                     Visibility="Collapsed">
                                                     <TextBox x:Name="TwoFactorCodeBox"
-                                materialDesign:HintAssist.Hint="Код двухфакторной аутентификации"
-                                Style="{StaticResource MaterialDesignFloatingHintTextBox}"
-                                Margin="0 0 0 15"/>
+                                                        materialDesign:HintAssist.Hint="Код двухфакторной аутентификации"
+                                                        Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                                                        Margin="0 0 0 15"/>
                                                     <TextBlock Text="Используйте Google Authenticator"
-                                  Style="{StaticResource MaterialDesignCaptionTextBlock}"
-                                  HorizontalAlignment="Center"/>
+                                                          Style="{StaticResource MaterialDesignCaptionTextBlock}"
+                                                          HorizontalAlignment="Center"/>
                                                     <Button Content="Подтвердить"
-                                Command="{Binding VerifyTwoFactorCommand}"
-                                Style="{StaticResource MaterialDesignRaisedButton}"
-                                Margin="0,10,0,0"/>
+                                                        Command="{Binding VerifyTwoFactorCommand}"
+                                                        Style="{StaticResource MaterialDesignRaisedButton}"
+                                                        Margin="0,10,0,0"/>
                                                 </StackPanel>
 
                                                 <Button Content="Войти"
@@ -301,25 +301,25 @@
 
                                                         <!-- Поле для ключа -->
                                                         <TextBox x:Name="SecretKeyBox"
-                    FontFamily="{StaticResource CyberFonts}"
-                    materialDesign:HintAssist.Hint="Секретный ключ"
-                    Style="{StaticResource MaterialDesignFloatingHintTextBox}"
-                    Margin="0 20 0 20"/>
+                                                            FontFamily="{StaticResource CyberFonts}"
+                                                            materialDesign:HintAssist.Hint="Секретный ключ"
+                                                            Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                                                            Margin="0 20 0 20"/>
 
                                                         <!-- Кнопки -->
                                                         <StackPanel Orientation="Horizontal" 
-                       HorizontalAlignment="Center"
-                       Margin="0 20 0 10">
+                                                               HorizontalAlignment="Center"
+                                                               Margin="0 20 0 10">
                                                             <Button Content="Назад"
-                       FontFamily="{StaticResource CyberFonts}"
-                       Style="{StaticResource MaterialDesignFlatButton}"
-                       Click="BackButton_Click"
-                       Margin="0 0 20 0"/>
+                                                               FontFamily="{StaticResource CyberFonts}"
+                                                               Style="{StaticResource MaterialDesignFlatButton}"
+                                                               Click="BackButton_Click"
+                                                               Margin="0 0 20 0"/>
 
                                                             <Button Content="Подтвердить"
-                       FontFamily="{StaticResource CyberFonts}"
-                       Command="{Binding ConfirmPasswordCommand}"
-                       Style="{StaticResource MaterialDesignRaisedButton}"/>
+                                                               FontFamily="{StaticResource CyberFonts}"
+                                                               Command="{Binding ConfirmPasswordCommand}"
+                                                               Style="{StaticResource MaterialDesignRaisedButton}"/>
                                                         </StackPanel>
 
                                                         <!-- Ссылка на повторную отправку -->
@@ -457,11 +457,11 @@
                                                 </StackPanel>
 
                                                 <Button x:Name="RegisterButton"
-                                                Content="Зарегистрироваться"
-                                                FontFamily="{StaticResource CyberFonts}"
-                                                Click="RegisterButton_Click"
-                                                Style="{StaticResource MaterialDesignRaisedButton}"
-                                                Margin="0 20 0 10"/>
+                                                        Content="Зарегистрироваться"
+                                                        FontFamily="{StaticResource CyberFonts}"
+                                                        Click="RegisterButton_Click"
+                                                        Style="{StaticResource MaterialDesignRaisedButton}"
+                                                        Margin="0 20 0 10"/>
 
                                                 <Button Content="Назад"
                                                     FontFamily="{StaticResource CyberFonts}"

@@ -1,37 +1,38 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Dapper;
+using MaterialDesignThemes.Wpf;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using NRI.Classes;
+using NRI.Classes.Email;
+using NRI.Data;
+using NRI.DB;
+using NRI.DiceRoll;
+using NRI.Helpers;
+using NRI.Pages;
+using NRI.Services;
+using NRI.ViewModels;
 using OtpNet;
 using System;
+using System.Collections.Generic;
+using System.ComponentModel;
 using System.Data;
+using System.Data.SqlClient;
+using System.Linq;
+using System.Runtime.InteropServices;
+using System.Security.Claims;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
-using MaterialDesignThemes.Wpf;
-using System.Text.RegularExpressions;
-using System.Windows.Media.Imaging;
-using System.Linq;
-using System.Data.SqlClient;
-using System.Windows.Interop;
-using System.Runtime.InteropServices;
 using System.Windows.Media.Effects;
-using System.Collections.Generic;
-using WpfAnimatedGif;
+using System.Windows.Media.Imaging;
 using System.Windows.Threading;
-using System.ComponentModel;
-using Dapper;
-using NRI.Classes.Email;
-using NRI.Helpers;
+using WpfAnimatedGif;
 using static NRI.DiceRoll.DiceRollerViewModel;
-using NRI.DiceRoll;
-using NRI.ViewModels;
-using NRI.Data;
-using NRI.Services;
-using NRI.Classes;
-using NRI.Pages;
-using NRI.DB;
 
 namespace NRI
 {
@@ -159,6 +160,11 @@ namespace NRI
                            ILogger<TwoFactorSetupDialog> twoFactorLogger)
         {
             InitializeComponent();
+            this.Closed += (sender, e) =>
+            {
+                // Очистка ресурсов при закрытии
+                this.Dispose();
+            };
             DataContext = this;
             // Инициализация полей для анимации
 
@@ -327,7 +333,7 @@ namespace NRI
                 }
                 // 5. Успешная авторизация
                 await _userRepository.ResetIncorrectAttemptsAsync(login);
-                await HandleSuccessfulLogin(user);
+                await HandleSuccessLogin(user);
             }
             catch (Exception ex)
             {
@@ -362,6 +368,7 @@ namespace NRI
                 error = "Введите пароль";
             return error == null;
         }
+
         private async Task VerifyTwoFactorCode()
         {
             if (string.IsNullOrWhiteSpace(TwoFactorCodeBox.Text))
@@ -375,7 +382,7 @@ namespace NRI
                 if (totp.VerifyTotp(TwoFactorCodeBox.Text, out _))
                 {
                     var user = await _authService.GetUserAsync(LoginBox.Text);
-                    await HandleSuccessfulLogin(user);
+                    await HandleSuccessLogin(user);
                 }
                 else
                 {
@@ -388,6 +395,7 @@ namespace NRI
                 ShowSnackbar("Ошибка проверки кода: " + ex.Message, true);
             }
         }
+
         private async Task ConfirmPassword()
         {
             if (string.IsNullOrWhiteSpace(SecretKeyBox.Text))
@@ -413,7 +421,7 @@ namespace NRI
                         }
                     }
                     // Обновляем статус подтверждения
-                    string updateQuery = "UPDATE Users SET password_confirm = 1 WHERE login = @Login";
+                    string updateQuery = "UPDATE Users SET account_confirmed = 1 WHERE login = @Login";
                     using (var cmd = new SqlCommand(updateQuery, connection))
                     {
                         cmd.Parameters.AddWithValue("@Login", _currentUserLogin);
@@ -430,6 +438,7 @@ namespace NRI
                 ShowSnackbar("Ошибка при подтверждении пароля", true);
             }
         }
+
         private async void RegisterButton_Click(object sender, RoutedEventArgs e)
         {
             if (!(sender is Button registerButton)) return;
@@ -746,7 +755,7 @@ namespace NRI
             }
         }
 
-        private async Task HandleSuccessfulLogin(DataTable user)
+        private async Task HandleSuccessLogin(DataTable user)
         {
             try
             {
@@ -754,10 +763,8 @@ namespace NRI
                 var username = user.Rows[0]["login"].ToString();
                 var email = user.Rows[0]["email"]?.ToString();
 
-                // Получаем роли из базы данных
                 var roles = await _userRepository.GetUserRolesAsync(userId) ?? new List<string> { "Игрок" };
 
-                // Генерируем токен
                 var jwtService = _serviceProvider.GetRequiredService<JwtService>();
                 var token = jwtService.GenerateToken(new User
                 {
@@ -768,34 +775,22 @@ namespace NRI
                     Roles = roles
                 });
 
-                
-
-                // Сохраняем данные
                 Application.Current.Properties["JwtToken"] = token;
 
-                var activityService = _serviceProvider.GetRequiredService<UserActivityService>();
-                activityService.StartTracking();
-
-                // Освобождаем ресурсы текущего окна перед созданием нового
-                CleanupResources();
-
-                _logger.LogInformation($"User roles for {username}: {string.Join(", ", roles)}");
-                // Создаем главное окно через ServiceProvider
-                var mainWindow = _serviceProvider.GetRequiredService<MainWindow>();
-                if (mainWindow.DataContext is MainWindowViewModel vm)
+                // Используем NavigationService для навигации
+                Application.Current.Dispatcher.Invoke(() =>
                 {
-                    vm.SetUserFromClaims(jwtService.ValidateToken(token));
-                }
-
-                mainWindow.Show();
-                this.Close();
+                    _navigationService.ShowWindow<MainWindow>();
+                    this.Close();
+                });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Ошибка создания главного окна");
-                ShowSnackbar("Ошибка запуска приложения", true);
+                _logger.LogError(ex, "Ошибка входа");
+                ShowSnackbar("Ошибка входа в систему", true);
             }
         }
+
 
         // Метод для определения наивысшей роли
         private string DetermineHighestRole(IEnumerable<string> roles)
@@ -876,6 +871,7 @@ namespace NRI
                 ShowSnackbar(errorMessage, true);
            }
         }
+
         private void ShowSnackbar(string message, bool isError)
         {
             if (string.IsNullOrEmpty(message))
@@ -936,10 +932,12 @@ namespace NRI
                 }
             });
         }
+
         private void ConfirmButton_Click(object sender, RoutedEventArgs e)
         {
             _ = ConfirmAccountAsync();
         }
+
         private async Task ConfirmAccountAsync()
         {
             if (string.IsNullOrWhiteSpace(SecretKeyBox.Text))

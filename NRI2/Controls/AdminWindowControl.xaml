@@ -4,20 +4,24 @@
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:local="clr-namespace:NRI.Controls"
              xmlns:converters="clr-namespace:NRI.Converters"
-             Background="#FF252526">
+             Background="#1A1A17">
 
     <UserControl.Resources>
-        
         <converters:BoolToColorConverter x:Key="BoolToColorConverter"/>
         <converters:BoolToStatusConverter x:Key="BoolToStatusConverter"/>
-        
-        <Style TargetType="Expander" BasedOn="{StaticResource MaterialDesignExpander}">
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="FontSize" Value="16"/>
-            <Setter Property="FontWeight" Value="Medium"/>
+
+        <!-- RPG Book Style -->
+        <Style x:Key="SectionHeader" TargetType="Expander">
+            <Setter Property="Background" Value="#2E2C29"/>
+            <Setter Property="Foreground" Value="#E2C275"/>
+            <Setter Property="BorderBrush" Value="#5D4B32"/>
+            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="Margin" Value="0 10 0 0"/>
             <Setter Property="Padding" Value="15 10"/>
-            <Setter Property="materialDesign:ColorZoneAssist.Mode" Value="PrimaryMid"/>
+            <Setter Property="ExpandDirection" Value="Down"/>
+            <Setter Property="FontFamily" Value="Georgia"/>
             <Setter Property="HeaderTemplate">
                 <Setter.Value>
                     <DataTemplate>
@@ -25,6 +29,7 @@
                             <materialDesign:PackIcon Kind="{Binding 
                                 RelativeSource={RelativeSource AncestorType=Expander}, 
                                 Path=Tag}" 
+                                Foreground="#E2C275"
                                 Margin="0 0 10 0"/>
                             <TextBlock Text="{Binding}" VerticalAlignment="Center"/>
                         </StackPanel>
@@ -33,34 +38,67 @@
             </Setter>
         </Style>
 
-        <Style TargetType="DataGrid" BasedOn="{StaticResource MaterialDesignDataGrid}">
-            <Setter Property="Background" Value="#FF333337"/>
-            <Setter Property="BorderBrush" Value="#FF444448"/>
-            <Setter Property="Foreground" Value="White"/>
+        <!-- Ancient Scroll DataGrid -->
+        <Style x:Key="RPGDataGrid" TargetType="DataGrid">
+            <Setter Property="Background" Value="#2E2C29"/>
+            <Setter Property="Foreground" Value="#E2C275"/>
+            <Setter Property="BorderBrush" Value="#5D4B32"/>
+            <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Margin" Value="0 0 0 15"/>
-            <Setter Property="HorizontalAlignment" Value="Stretch"/>
-            <Setter Property="VerticalScrollBarVisibility" Value="Auto"/>
-            <Setter Property="AutoGenerateColumns" Value="False"/>
-            <Setter Property="CanUserAddRows" Value="False"/>
-            <Setter Property="SelectionMode" Value="Single"/>
-            <Setter Property="IsReadOnly" Value="True"/>
             <Setter Property="HeadersVisibility" Value="Column"/>
+            <Setter Property="AutoGenerateColumns" Value="False"/>
+            <Setter Property="FontFamily" Value="Georgia"/>
+            <Setter Property="RowBackground" Value="Transparent"/>
+            <Setter Property="AlternatingRowBackground" Value="#3A3734"/>
             <Setter Property="ColumnHeaderStyle">
                 <Setter.Value>
-                    <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource MaterialDesignDataGridColumnHeader}">
-                        <Setter Property="Foreground" Value="#D0D0D0"/>
-                        <Setter Property="Background" Value="#FF2D2D30"/>
-                        <Setter Property="FontWeight" Value="SemiBold"/>
+                    <Style TargetType="DataGridColumnHeader">
+                        <Setter Property="Background" Value="#5D4B32"/>
+                        <Setter Property="Foreground" Value="#F5E9D3"/>
+                        <Setter Property="FontWeight" Value="Bold"/>
+                        <Setter Property="FontSize" Value="14"/>
+                        <Setter Property="Padding" Value="10 8"/>
+                        <Setter Property="BorderBrush" Value="#4A3B25"/>
+                        <Setter Property="BorderThickness" Value="0 0 0 1"/>
+                    </Style>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="CellStyle">
+                <Setter.Value>
+                    <Style TargetType="DataGridCell">
+                        <Setter Property="BorderBrush" Value="#4A3B25"/>
+                        <Setter Property="BorderThickness" Value="0 0 1 0"/>
                         <Setter Property="Padding" Value="10 8"/>
                     </Style>
                 </Setter.Value>
             </Setter>
         </Style>
 
-        <Style TargetType="Button" BasedOn="{StaticResource MaterialDesignRaisedButton}">
+        <!-- Parchment Button Style -->
+        <Style x:Key="ParchmentButton" TargetType="Button" BasedOn="{StaticResource MaterialDesignRaisedButton}">
+            <Setter Property="Background" Value="#5D4B32"/>
+            <Setter Property="Foreground" Value="#F5E9D3"/>
+            <Setter Property="BorderBrush" Value="#4A3B25"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="FontFamily" Value="Georgia"/>
+            <Setter Property="FontSize" Value="14"/>
             <Setter Property="Margin" Value="0 0 10 10"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="materialDesign:ButtonAssist.CornerRadius" Value="4"/>
+            <Setter Property="materialDesign:ButtonAssist.CornerRadius" Value="2"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#6D5B42"/>
+                    <Setter Property="Foreground" Value="White"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Special Action Button -->
+        <Style x:Key="RPGIconButton" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#E2C275"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="Margin" Value="5 0 0 0"/>
+            <Setter Property="ToolTipService.InitialShowDelay" Value="500"/>
         </Style>
     </UserControl.Resources>
 
@@ -70,31 +108,31 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- Заголовок -->
-        <Border Grid.Row="0" Background="#FF2D2D30" Padding="20 15">
+        <!-- Header Panel -->
+        <Border Grid.Row="0" Background="#5D4B32" Padding="20 15" BorderBrush="#4A3B25" BorderThickness="0 0 0 2">
             <StackPanel Orientation="Horizontal">
                 <materialDesign:PackIcon Kind="ShieldAccount" 
-                                        Foreground="#FF4CAF50"
+                                        Foreground="#E2C275"
                                         Width="32"
                                         Height="32"
                                         Margin="0 0 15 0"/>
-                <TextBlock Text="АДМИНИСТРИРОВАНИЕ" 
-                           Foreground="White"
+                <TextBlock Text="ХРОНИКИ МАСТЕРА" 
+                           Foreground="#F5E9D3"
                            FontSize="24"
                            FontWeight="Bold"
+                           FontFamily="Georgia"
                            VerticalAlignment="Center"/>
             </StackPanel>
         </Border>
 
-        <!-- Основной контент -->
+        <!-- Main Content -->
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="20">
             <StackPanel>
-                <!-- Управление пользователями -->
-                <Expander Header="Управление пользователями" 
+                <!-- Guild Members Section -->
+                <Expander Header="ГИЛЬДИЯ ИГРОКОВ" 
                           Tag="AccountGroup" 
                           IsExpanded="True"
-                          Foreground="DarkKhaki"
-                          Background="Cornsilk">
+                          Style="{StaticResource SectionHeader}">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
@@ -102,74 +140,94 @@
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
-                        <!-- Инструменты -->
+                        <!-- Search Tools -->
                         <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="0 0 0 15">
                             <TextBox Width="300" 
-                                     materialDesign:HintAssist.Hint="Поиск пользователя..."
-                                     Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                     Foreground="#F5E9D3"
+                                     Background="#2E2C29"
+                                     BorderBrush="#5D4B32"
+                                     materialDesign:HintAssist.Hint="Поиск по гильдии..."
+                                     materialDesign:HintAssist.Foreground="#A6926E"
                                      Margin="0 0 10 0"/>
 
-                            <Button Content="Фильтры"
-                                    Style="{StaticResource MaterialDesignOutlinedButton}"
-                                    Foreground="#FF4CAF50"/>
+                            <Button Content="ФИЛЬТРЫ"
+                                    Style="{StaticResource ParchmentButton}"/>
                         </StackPanel>
 
-                        <!-- Таблица пользователей -->
-                        <DataGrid Grid.Row="1" ItemsSource="{Binding Users}" AutoGenerateColumns="False">
+                        <!-- Members Table -->
+                        <DataGrid Grid.Row="1" 
+                                  ItemsSource="{Binding Users}" 
+                                  Style="{StaticResource RPGDataGrid}">
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="Логин" Binding="{Binding Login}" />
-                                <DataGridTextColumn Header="Email" Binding="{Binding Email}" />
-                                <DataGridTemplateColumn Header="Статус" Width="100">
+                                <DataGridTextColumn Header="ИМЯ" Binding="{Binding Login}" Width="*"/>
+                                <DataGridTextColumn Header="E-MAIL" Binding="{Binding Email}" Width="2*"/>
+                                <DataGridTemplateColumn Header="СТАТУС" Width="120">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <StackPanel>
-                                                <TextBlock Text="{Binding IsOnline, Converter={StaticResource BoolToStatusConverter}}"/>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                                 <Ellipse Width="10" Height="10" 
-                                                 Fill="{Binding IsOnline, Converter={StaticResource BoolToColorConverter}}"/>
+                                                 Fill="{Binding IsOnline, Converter={StaticResource BoolToColorConverter}}"
+                                                 Margin="0 0 5 0"/>
+                                                <TextBlock Text="{Binding IsOnline, Converter={StaticResource BoolToStatusConverter}}"/>
                                             </StackPanel>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                <DataGridTextColumn Header="Роль" Binding="{Binding Role}" />
-                                <DataGridTextColumn Header="Последняя активность" 
-                                Binding="{Binding LastActivity, StringFormat='{}{0:dd.MM.yyyy HH:mm}'}" />
+                                <DataGridTextColumn Header="РАНГ" Binding="{Binding Role}" Width="100"/>
+                                <DataGridTextColumn Header="АКТИВНОСТЬ" 
+                                                    Binding="{Binding LastActivity, StringFormat='{}{0:dd.MM.yyyy HH:mm}'}" 
+                                                    Width="180"/>
+                                <DataGridTemplateColumn Header="ДЕЙСТВИЯ" Width="100">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                <Button Style="{StaticResource RPGIconButton}"
+                                                        ToolTip="Изменить ранг"
+                                                        Command="{Binding DataContext.EditUserCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                        CommandParameter="{Binding}">
+                                                    <materialDesign:PackIcon Kind="Pencil" />
+                                                </Button>
+                                                <Button Style="{StaticResource RPGIconButton}"
+                                                        ToolTip="Исключить из гильдии"
+                                                        Foreground="#C44536"
+                                                        Command="{Binding DataContext.DeleteUserCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                        CommandParameter="{Binding}">
+                                                    <materialDesign:PackIcon Kind="Delete" />
+                                                </Button>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
                             </DataGrid.Columns>
                         </DataGrid>
-                        
-                        <!-- Панель действий -->
+
+                        <!-- Action Panel -->
                         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0 15 0 0">
-                            <Button Content="Добавить пользователя"
+                            <Button Content="ПРИНЯТЬ В ГИЛЬДИЮ"
                                     Command="{Binding AddUserCommand}"
-                                    Style="{StaticResource MaterialDesignRaisedButton}"
-                                    Background="#FF4CAF50"
-                                    Foreground="White"
-                                    Width="206"/>
-                            
+                                    Style="{StaticResource ParchmentButton}"
+                                    Width="180"/>
 
-                            
-                            <Button Content="Экспорт в CSV"
-                                    Style="{StaticResource MaterialDesignOutlinedButton}"
-                                    Foreground="#FF4CAF50"
-                                    Margin="10 0 0 0" Width="137"/>
+                            <Button Content="СВИТОК ГЕРОЕВ"
+                                    Style="{StaticResource ParchmentButton}"
+                                    ToolTip="Экспорт в CSV"
+                                    Margin="10 0 0 0"
+                                    Width="140"/>
 
-                            <Button Command="{Binding DataContext.DeleteUserCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                    CommandParameter="{Binding}"
-                                    Style="{StaticResource MaterialDesignIconButton}"
-                                    Foreground="#FFE53935"
-                                    ToolTip="Удалить"
-                                    Margin="5 0 0 0">
-                                <materialDesign:PackIcon Kind="Delete" />
-                                
+                            <Button Content="ОБНОВИТЬ"
+                                    Command="{Binding RefreshUsersCommand}"
+                                    Style="{StaticResource ParchmentButton}"
+                                    Margin="10 0 0 0"
+                                    Width="115">
                             </Button>
                         </StackPanel>
                     </Grid>
                 </Expander>
 
-                <!-- Игровые системы -->
-                <Expander Header="Управление игровыми системами" 
+                <!-- Game Systems Section -->
+                <Expander Header="СИСТЕМЫ ИГР" 
                           Tag="DiceMultiple"
-                          Background="Cornsilk"
-                          Foreground="#FF4CAF50">
+                          Style="{StaticResource SectionHeader}">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
@@ -177,47 +235,51 @@
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
-                        <!-- Инструменты -->
+                        <!-- System Tools -->
                         <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="0 0 0 15">
                             <TextBox Width="300" 
-                                     materialDesign:HintAssist.Hint="Поиск игровой системы..."
-                                     Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                                     Margin="0 0 10 0" />
+                                     Foreground="#F5E9D3"
+                                     Background="#2E2C29"
+                                     BorderBrush="#5D4B32"
+                                     materialDesign:HintAssist.Hint="Поиск по системам..."
+                                     materialDesign:HintAssist.Foreground="#A6926E"
+                                     Margin="0 0 10 0"/>
                         </StackPanel>
 
-                        <!-- Таблица игровых систем -->
-                        <DataGrid Grid.Row="1" ItemsSource="{Binding GameSystems}">
+                        <!-- Systems Table -->
+                        <DataGrid Grid.Row="1" 
+                                  ItemsSource="{Binding GameSystems}" 
+                                  Style="{StaticResource RPGDataGrid}">
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="Auto"/>
-                                <DataGridTextColumn Header="Название" Binding="{Binding Name}" Width="*"/>
-                                <DataGridTextColumn Header="Версия" Binding="{Binding Version}" Width="120"/>
-                                <DataGridTextColumn Header="Статус" 
-                                                   Binding="{Binding IsOnline, Converter={StaticResource BoolToStatusConverter}}">
+                                <DataGridTextColumn Header="НАЗВАНИЕ" Binding="{Binding Name}" Width="*"/>
+                                <DataGridTextColumn Header="ВЕРСИЯ" Binding="{Binding Version}" Width="100"/>
+                                <DataGridTextColumn Header="СТАТУС" 
+                                                   Binding="{Binding IsOnline, Converter={StaticResource BoolToStatusConverter}}" 
+                                                   Width="120">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="HorizontalAlignment" Value="Center"/>
-                                            <Setter Property="Padding" Value="8 4"/>
-                                            <Setter Property="Background" Value="{Binding Status, Converter={StaticResource StatusToBrushConverter}}"/>
-                                            <Setter Property="Foreground" Value="DarkKhaki"/>
-                                            <Setter Property="FontWeight" Value="Medium"/>
+                                            <Setter Property="VerticalAlignment" Value="Center"/>
+                                            <Setter Property="Padding" Value="5 3"/>
+                                            <Setter Property="Background" Value="{Binding IsOnline, Converter={StaticResource StatusToBrushConverter}}"/>
+                                            <Setter Property="Foreground" Value="#1A1A17"/>
+                                            <Setter Property="FontWeight" Value="Bold"/>
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTemplateColumn Width="80">
+                                <DataGridTemplateColumn Header="ДЕЙСТВИЯ" Width="120">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                                <Button Style="{StaticResource MaterialDesignIconButton}"
-                                                        Foreground="#FF4CAF50"
+                                                <Button Style="{StaticResource RPGIconButton}"
                                                         ToolTip="Редактировать"
                                                         Command="{Binding DataContext.EditSystemCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                         CommandParameter="{Binding}">
                                                     <materialDesign:PackIcon Kind="Pencil" />
                                                 </Button>
-
-                                                <Button Style="{StaticResource MaterialDesignIconButton}"
-                                                        Foreground="#FFE53935"
+                                                <Button Style="{StaticResource RPGIconButton}"
                                                         ToolTip="Удалить"
+                                                        Foreground="#C44536"
                                                         Command="{Binding DataContext.DeleteSystemCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                         CommandParameter="{Binding}"
                                                         Margin="5 0 0 0">
@@ -230,43 +292,33 @@
                             </DataGrid.Columns>
                         </DataGrid>
 
-                        <!-- Панель действий -->
+                        <!-- Action Panel -->
                         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0 15 0 0">
-                            <Button Content="Добавить систему"
+                            <Button Content="НОВАЯ СИСТЕМА"
                                     Command="{Binding AddGameSystemCommand}"
-                                    Style="{StaticResource MaterialDesignRaisedButton}"
-                                    Background="#FF4CAF50"
-                                    Foreground="White"
-                                    Width="162"/>
+                                    Style="{StaticResource ParchmentButton}"
+                                    Width="160"/>
 
-                            <Button Content="Импорт шаблонов"
+                            <Button Content="ИМПОРТ ТОМОВ"
                                     Command="{Binding ImportTemplatesCommand}"
-                                    Style="{StaticResource MaterialDesignOutlinedButton}"
-                                    Foreground="#FF4CAF50"
+                                    Style="{StaticResource ParchmentButton}"
                                     Margin="10 0 0 0"
-                                    Width="166"/>
-
-                            <Button Command="{Binding DataContext.DeleteGameSystem, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                    CommandParameter="{Binding}"
-                                    Style="{StaticResource MaterialDesignIconButton}"
-                                    Foreground="#FFE53935"
-                                    ToolTip="Удалить"
-                                    Margin="5 0 0 0">
-                                <materialDesign:PackIcon Kind="Delete" />
-                            </Button>
-
+                                    Width="160"/>
                         </StackPanel>
                     </Grid>
                 </Expander>
 
-                <!-- Статистика -->
-                <Expander Header="Статистика и аналитика" 
-                          Tag="ChartLine"
-                          Foreground="White"
-                          Background="#FF2D2D30">
+                <!-- Game Statistics Section -->
+                <Expander Header="КНИГА ХРОНИК" 
+                          Tag="BookOpenVariant"
+                          Style="{StaticResource SectionHeader}">
                     <StackPanel>
-                        <!-- Общая статистика -->
+                        <!-- Statistics Grid -->
                         <Grid Margin="10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
@@ -274,53 +326,61 @@
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
 
-                            <TextBlock Grid.Row="0" 
-                                 Text="{Binding UserStatistics.TotalUsers, StringFormat='Всего пользователей: {0}'}"
-                                 FontSize="16"
-                                 FontWeight="Bold"/>
+                            <TextBlock Text="◈" Grid.Row="0" Grid.Column="0" 
+                                       Foreground="#E2C275" Margin="0 0 10 0"/>
+                            <TextBlock Text="{Binding UserStatistics.TotalUsers, StringFormat='Члены гильдии: {0}'}"
+                                     Grid.Row="0" Grid.Column="1"
+                                     FontSize="16"/>
 
-                            <TextBlock Grid.Row="1" 
-                                 Text="{Binding UserStatistics.OnlineUsers, StringFormat='Онлайн: {0}'}"
-                                 FontSize="16"
-                                 Foreground="LimeGreen"
-                                 Margin="0,10,0,0"/>
+                            <TextBlock Text="◈" Grid.Row="1" Grid.Column="0" 
+                                       Foreground="#8FDA8F" Margin="0 5 10 0"/>
+                            <TextBlock Text="{Binding UserStatistics.OnlineUsers, StringFormat='На заданиях: {0}'}"
+                                     Grid.Row="1" Grid.Column="1"
+                                     FontSize="16"
+                                     Foreground="#8FDA8F"
+                                     Margin="0 5 0 0"/>
 
-                            <TextBlock Grid.Row="2" 
-                                 Text="{Binding UserStatistics.OfflineUsers, StringFormat='Оффлайн: {0}'}"
-                                 FontSize="16"
-                                 Foreground="LightGray"
-                                 Margin="0,5,0,0"/>
+                            <TextBlock Text="◈" Grid.Row="2" Grid.Column="0" 
+                                       Foreground="#A0A0A0" Margin="0 5 10 0"/>
+                            <TextBlock Text="{Binding UserStatistics.OfflineUsers, StringFormat='В таверне: {0}'}"
+                                     Grid.Row="2" Grid.Column="1"
+                                     FontSize="16"
+                                     Foreground="#A0A0A0"
+                                     Margin="0 5 0 0"/>
 
-                            <TextBlock Grid.Row="3"
-                             Text="{Binding UserStatistics.LastUpdated, StringFormat='Обновлено: {0:HH:mm:ss}'}"
-                             FontSize="12"
-                             Foreground="Gray"
-                             Margin="0,10,0,0"/>
+                            <TextBlock Text="◆" Grid.Row="3" Grid.Column="0" 
+                                       Foreground="#B0B0FF" Margin="0 10 10 0"/>
+                            <TextBlock Text="{Binding UserStatistics.LastUpdated, StringFormat='Последняя запись: {0:HH:mm, dd MMMM yyyy}'}"
+                                     Grid.Row="3" Grid.Column="1"
+                                     FontSize="14"
+                                     Foreground="#B0B0FF"
+                                     Margin="0 10 0 0"/>
                         </Grid>
 
-                        <!-- Список активных пользователей -->
-                        <TextBlock Text="Активные пользователи:" 
-                                 FontSize="14" 
+                        <!-- Active Players -->
+                        <TextBlock Text="Сейчас в игре:" 
                                  FontWeight="Bold"
-                                 Margin="10,15,10,5"/>
-                        
+                                 Margin="10,15,10,5"
+                                 FontSize="16"/>
+
                         <DataGrid ItemsSource="{Binding OnlineUsers}" 
+                                Style="{StaticResource RPGDataGrid}"
                                 AutoGenerateColumns="False"
                                 MaxHeight="300"
                                 Margin="10,0,10,10">
-                            
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="Пользователь" Binding="{Binding Username}"/>
-                                <DataGridTextColumn Header="Последняя активность" 
-                                        Binding="{Binding LastActivity, StringFormat='{}{0:dd.MM.yy HH:mm}'}"/>
-                                <DataGridTemplateColumn Header="Статус" Width="80">
+                                <DataGridTextColumn Header="ИГРОК" Binding="{Binding Username}" Width="*"/>
+                                <DataGridTextColumn Header="ПОСЛЕДНЯЯ АКТИВНОСТЬ" 
+                                        Binding="{Binding LastActivity, StringFormat='{}{0:dd.MM.yy HH:mm}'}" 
+                                        Width="200"/>
+                                <DataGridTemplateColumn Header="СТАТУС" Width="100">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                                 <Ellipse Width="10" Height="10" 
-                                     Fill="{Binding IsOnline, Converter={StaticResource BoolToColorConverter}}"
-                                     Margin="0,0,5,0"/>
-                                                <TextBlock Text="{Binding IsOnline, Converter={StaticResource BoolToStatusConverter}}"/>
+                                                 Fill="{Binding IsOnline, Converter={StaticResource BoolToColorConverter}}"
+                                                 Margin="0 0 5 0"/>
+                                                <TextBlock Text="В игре" Foreground="#8FDA8F"/>
                                             </StackPanel>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>

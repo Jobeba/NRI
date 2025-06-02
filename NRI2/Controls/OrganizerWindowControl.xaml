@@ -1,20 +1,178 @@
-﻿<UserControl x:Class="NRI.Controls.OrganizerWindowControl"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:local="clr-namespace:NRI.Controls"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d"
-        d:DesignHeight="450" d:DesignWidth="800">
+﻿<!-- OrganizerWindowControl.xaml -->
+<UserControl x:Class="NRI.Controls.OrganizerWindowControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:local="clr-namespace:NRI.Controls"
+             Background="#1A1A17"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d">
+
+    <UserControl.Resources>
+        <!-- Стили для панели организатора -->
+        <Style x:Key="OrganizerSectionHeader" TargetType="Expander">
+            <Setter Property="Background" Value="#382E2E"/>
+            <Setter Property="Foreground" Value="#F0D5B8"/>
+            <Setter Property="BorderBrush" Value="#5D3B3B"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Margin" Value="0 10 0 5"/>
+            <Setter Property="ExpandDirection" Value="Down"/>
+        </Style>
+
+        <Style x:Key="SessionItemStyle" TargetType="Border">
+            <Setter Property="Background" Value="#382E2E"/>
+            <Setter Property="BorderBrush" Value="#5D3B3B"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Padding" Value="10"/>
+            <Setter Property="Margin" Value="0 5"/>
+        </Style>
+
+        <Style x:Key="OrganizerButton" TargetType="Button" BasedOn="{StaticResource MaterialDesignRaisedButton}">
+            <Setter Property="Background" Value="#5D3B3B"/>
+            <Setter Property="Foreground" Value="#F0D5B8"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Margin" Value="0 0 10 10"/>
+        </Style>
+    </UserControl.Resources>
 
     <Grid>
-        <local:BaseWindowControl x:Name="BaseControl">
-            <local:BaseWindowControl.SideMenuContent>
-                <StackPanel>
-                    <Button Content="Сохранить" Click="Save_Click" Margin="10" Style="{StaticResource MenuButtonStyle}"/>
-                    <Button Content="Удалить" Click="Delete_Click" Margin="10" Style="{StaticResource MenuButtonStyle}"/>
-                </StackPanel>
-            </local:BaseWindowControl.SideMenuContent>
-        </local:BaseWindowControl>
+        <!-- Панель организатора -->
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Шапка -->
+        <Border Grid.Row="0" Background="#5D3B3B" Padding="15">
+            <StackPanel Orientation="Horizontal">
+                <materialDesign:PackIcon Kind="Crown" 
+                                      Foreground="#F0D5B8"
+                                      Width="24"
+                                      Height="24"
+                                      Margin="0 0 10 0"/>
+                <TextBlock Text="ПАНЕЛЬ ОРГАНИЗАТОРА" 
+                         Foreground="#F0D5B8"
+                         FontSize="18"
+                         FontWeight="Bold"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Основное содержание -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="15">
+            <StackPanel>
+                <!-- Список мероприятий -->
+                <Expander Header="МОИ МЕРОПРИЯТИЯ" 
+                        Style="{StaticResource OrganizerSectionHeader}"
+                        IsExpanded="True">
+                    <StackPanel>
+                        <Button Content="СОЗДАТЬ МЕРОПРИЯТИЕ" 
+                              Style="{StaticResource OrganizerButton}"
+                              Command="{Binding CreateEventCommand}"/>
+
+                        <ItemsControl ItemsSource="{Binding Events}"
+                                    Margin="0 10 0 0">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Style="{StaticResource SessionItemStyle}">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <StackPanel Grid.Column="0">
+                                                <TextBlock Text="{Binding Name}" 
+                                                       FontSize="16"
+                                                       FontWeight="Bold"/>
+                                                <TextBlock Text="{Binding Description}"
+                                                       Margin="0 5 0 0"/>
+                                                <TextBlock Text="{Binding Date, StringFormat='Дата: {0:dd.MM.yyyy HH:mm}'}"
+                                                       Margin="0 5 0 0"/>
+                                                <TextBlock Text="{Binding Players.Count, StringFormat='Участников: {0}'}"
+                                                       Margin="0 5 0 0"/>
+                                            </StackPanel>
+
+                                            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                                <Button Content="УПРАВЛЕНИЕ"
+                                                    Style="{StaticResource OrganizerButton}"
+                                                    Command="{Binding DataContext.ManageEventCommand, 
+                                                             RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}"
+                                                    Margin="0 0 10 0"/>
+                                                <Button Content="УДАЛИТЬ"
+                                                    Style="{StaticResource OrganizerButton}"
+                                                    Background="#8B3737"
+                                                    Command="{Binding DataContext.DeleteEventCommand, 
+                                                             RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Expander>
+
+                <!-- Участники мероприятий -->
+                <Expander Header="УЧАСТНИКИ МЕРОПРИЯТИЙ" 
+                        Style="{StaticResource OrganizerSectionHeader}"
+                        Margin="0 15 0 0">
+                    <DataGrid ItemsSource="{Binding EventParticipants}"
+                            AutoGenerateColumns="False"
+                            CanUserAddRows="False"
+                            IsReadOnly="True">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="МЕРОПРИЯТИЕ" Binding="{Binding Event.Name}" Width="*"/>
+                            <DataGridTextColumn Header="ИГРОК" Binding="{Binding Player.Username}" Width="*"/>
+                            <DataGridTextColumn Header="ПЕРСОНАЖ" Binding="{Binding Character.Name}" Width="*"/>
+                            <DataGridTextColumn Header="СТАТУС" Binding="{Binding Status}" Width="120"/>
+                            <DataGridTemplateColumn Header="ДЕЙСТВИЯ" Width="150">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Button Content="ИЗМЕНИТЬ СТАТУС"
+                                            Style="{StaticResource OrganizerButton}"
+                                            Command="{Binding DataContext.ChangeStatusCommand, 
+                                                     RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding}"
+                                            FontSize="12"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Expander>
+
+                <!-- Статистика -->
+                <Expander Header="СТАТИСТИКА" 
+                        Style="{StaticResource OrganizerSectionHeader}"
+                        Margin="0 15 0 0">
+                    <Grid Margin="10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="{Binding Events.Count, StringFormat='Всего мероприятий: {0}'}"
+                                   Margin="0 5"/>
+                            <TextBlock Text="{Binding ActiveEventsCount, StringFormat='Активных: {0}'}"
+                                   Margin="0 5"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="{Binding TotalParticipants, StringFormat='Всего участников: {0}'}"
+                                   Margin="0 5"/>
+                            <TextBlock Text="{Binding MostPopularEvent, StringFormat='Самое популярное: {0}'}"
+                                   Margin="0 5"/>
+                        </StackPanel>
+                    </Grid>
+                </Expander>
+            </StackPanel>
+        </ScrollViewer>
     </Grid>
 </UserControl>

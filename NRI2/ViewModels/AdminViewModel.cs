@@ -55,6 +55,8 @@ namespace NRI.ViewModels
             DeleteGameSystemCommand = new RelayCommand(DeleteGameSystem);
             ImportTemplatesCommand = new RelayCommand(ImportTemplates);
 
+            OnlineUsers = new ObservableCollection<UserStatusDto>();
+
             _refreshTimer = new DispatcherTimer
             {
                 Interval = TimeSpan.FromSeconds(30)
